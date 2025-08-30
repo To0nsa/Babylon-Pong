@@ -3,7 +3,7 @@ import type { InputIntent } from "../../game/input";
 import { ZeroIntent } from "../../game/input";
 import { attachKeyboard, readKeyboardAxes } from "./keyboard";
 import { attachTouchZones, readTouchAxes } from "./touchZones";
-import { blockInputFor, isInputBlocked } from "./core/block";
+import { blockInputFor, isInputBlocked } from "./block";
 
 export { blockInputFor, isInputBlocked };
 

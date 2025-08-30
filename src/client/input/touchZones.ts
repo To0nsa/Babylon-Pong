@@ -1,5 +1,5 @@
 // src/client/input/touchZones.ts
-import type { TouchSide } from "./core/types";
+import type { TouchSide } from "./types";
 
 type ActiveTouch = {
   id: number;
