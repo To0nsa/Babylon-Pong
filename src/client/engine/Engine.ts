@@ -49,7 +49,9 @@ export function createEngine(canvas: HTMLCanvasElement): EngineKit {
   const lostToken = engine.onContextLostObservable.add(() => {
     contextLost = true;
     // Keep this layer passive: Lifecycle/RenderLoop can decide to pause if desired.
-    console.warn("[Engine] WebGL context lost — visuals paused until restored.");
+    console.warn(
+      "[Engine] WebGL context lost — visuals paused until restored.",
+    );
   });
 
   const restoredToken = engine.onContextRestoredObservable.add(() => {

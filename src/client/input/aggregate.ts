@@ -29,7 +29,7 @@ export function readIntent(): InputIntent {
   const { leftAxisTouch, rightAxisTouch } = readTouchAxes();
   const { leftAxisKey, rightAxisKey } = readKeyboardAxes();
 
-  const leftAxis  = leftAxisTouch  !== 0 ? leftAxisTouch  : leftAxisKey;
+  const leftAxis = leftAxisTouch !== 0 ? leftAxisTouch : leftAxisKey;
   const rightAxis = rightAxisTouch !== 0 ? rightAxisTouch : rightAxisKey;
 
   return { leftAxis, rightAxis };

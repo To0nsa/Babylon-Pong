@@ -17,11 +17,13 @@ export function attachKeyboard(el: HTMLElement): KeyboardDetach {
 }
 
 /** Returns axis intent from current key set. (+1 up, -1 down) */
-export function readKeyboardAxes(): { leftAxisKey: number; rightAxisKey: number } {
+export function readKeyboardAxes(): {
+  leftAxisKey: number;
+  rightAxisKey: number;
+} {
   const clamp1 = (v: number) => (v > 0 ? 1 : v < 0 ? -1 : 0);
 
-  const leftKey =
-    (keys.has("z") ? 1 : 0) + (keys.has("s") ? -1 : 0);
+  const leftKey = (keys.has("z") ? 1 : 0) + (keys.has("s") ? -1 : 0);
 
   const rightKey =
     (keys.has("ArrowUp") ? 1 : 0) + (keys.has("ArrowDown") ? -1 : 0);

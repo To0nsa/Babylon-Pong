@@ -23,7 +23,7 @@ export function createLifecycle(
 ) {
   // Tunables (can be changed at runtime via setRates)
   let visibleHz = Math.max(1, opts.logicHz ?? 60);
-  let hiddenHz  = Math.max(1, opts.hiddenLogicHz ?? 5);
+  let hiddenHz = Math.max(1, opts.hiddenLogicHz ?? 5);
 
   // Active rate depends on visibility
   let currentHz = document.hidden ? hiddenHz : visibleHz;
@@ -111,11 +111,16 @@ export function createLifecycle(
     setRates({
       visibleHz: v,
       hiddenHz: h,
-    }: { visibleHz?: number; hiddenHz?: number }) {
+    }: {
+      visibleHz?: number;
+      hiddenHz?: number;
+    }) {
       if (v) visibleHz = Math.max(1, v);
-      if (h) hiddenHz  = Math.max(1, h);
+      if (h) hiddenHz = Math.max(1, h);
       // Clamp any carried accumulator so we don't overstep after a big rate change
-      const stepMs = Math.round(1000 / (document.hidden ? hiddenHz : visibleHz));
+      const stepMs = Math.round(
+        1000 / (document.hidden ? hiddenHz : visibleHz),
+      );
       accMs = Math.min(accMs, stepMs);
       onVisibility();
     },

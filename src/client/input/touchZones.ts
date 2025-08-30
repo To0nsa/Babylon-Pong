@@ -9,8 +9,8 @@ type ActiveTouch = {
 };
 
 const active: Map<number, ActiveTouch> = new Map();
-let leftAxisTouch = 0;   // -1..1
-let rightAxisTouch = 0;  // -1..1
+let leftAxisTouch = 0; // -1..1
+let rightAxisTouch = 0; // -1..1
 
 /** Convert vertical pixel delta to a normalized axis with deadzone. */
 function sign01(v: number, dead = 8, max = 64): number {
@@ -51,7 +51,7 @@ export function attachTouchZones(el: HTMLElement): TouchDetach {
       const a = active.get(t.identifier);
       if (!a) continue;
       const dy = a.startY - t.clientY; // up => positive
-      const axis = sign01(-dy);        // invert so up => +1
+      const axis = sign01(-dy); // invert so up => +1
       if (a.side === "left") leftAxisTouch = axis;
       else rightAxisTouch = axis;
       a.lastY = t.clientY;
@@ -87,7 +87,10 @@ export function attachTouchZones(el: HTMLElement): TouchDetach {
   };
 }
 
-export function readTouchAxes(): { leftAxisTouch: number; rightAxisTouch: number } {
+export function readTouchAxes(): {
+  leftAxisTouch: number;
+  rightAxisTouch: number;
+} {
   const clamp1 = (v: number) => (v > 0 ? 1 : v < 0 ? -1 : 0);
   return {
     leftAxisTouch: clamp1(leftAxisTouch),
