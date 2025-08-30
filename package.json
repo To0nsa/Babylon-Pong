@@ -1,0 +1,29 @@
+{
+  "name": "babylonpong",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "docs": "typedoc --options typedoc.json",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
+    "lint:format": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\""
+  },
+  "devDependencies": {
+    "@babylonjs/inspector": "^8.23.0",
+    "prettier": "^3.6.2",
+    "typedoc": "^0.28.10",
+    "typedoc-plugin-markdown": "^4.8.1",
+    "typescript": "~5.8.3",
+    "vite": "^7.1.2"
+  },
+  "dependencies": {
+    "@babylonjs/core": "^8.23.0",
+    "@babylonjs/gui": "^8.23.0",
+    "@babylonjs/loaders": "^8.23.0",
+    "@tailwindcss/vite": "^4.1.12",
+    "tailwindcss": "^4.1.12"
+  }
+}
