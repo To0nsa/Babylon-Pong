@@ -1,3 +1,4 @@
+// src/shared/utils/Logger.ts
 import Logger from "../../shared/utils/Logger";
 
 export function isMobile(): boolean {
@@ -14,24 +15,30 @@ export function isMobile(): boolean {
 
   const ua: string = navigator.userAgent || "";
 
-  // classic user-agent sniffing
+  // 1) Classic UA sniffing
   const isMobileUA: boolean = /Mobi|Android|iPhone|iPad|iPod/i.test(ua);
-  Logger.debug(ctx, "User agent:", ua, "| isMobileUA:", isMobileUA);
 
-  // viewport heuristic (small width + high pixel density)
+  // 2) Viewport heuristic (phones + small tablets)
   const isSmallHighDPI: boolean =
     window.innerWidth <= 812 && (window.devicePixelRatio || 1) > 1;
-  Logger.debug(
-    ctx,
-    "innerWidth:",
-    window.innerWidth,
-    "devicePixelRatio:",
-    window.devicePixelRatio,
-    "| isSmallHighDPI:",
-    isSmallHighDPI,
-  );
 
-  const result = isMobileUA || isSmallHighDPI;
+  // 3) Pointer heuristic (covers tablets & hybrids with touch input)
+  const isTouchDevice: boolean =
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(pointer: coarse)").matches;
+
+  const result = isMobileUA || isSmallHighDPI || isTouchDevice;
+
+  Logger.debug(ctx, {
+    ua,
+    isMobileUA,
+    innerWidth: window.innerWidth,
+    devicePixelRatio: window.devicePixelRatio,
+    isSmallHighDPI,
+    isTouchDevice,
+    result,
+  });
+
   Logger.info(ctx, "Result:", result);
 
   return result;
