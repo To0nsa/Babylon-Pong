@@ -12,8 +12,7 @@ import Logger from "../../shared/utils/Logger";
 import { createInitialState } from "../../game/state";
 import { stepPaddles } from "../../game/systems/paddle";
 import { stepBallAndCollisions } from "../../game/systems/ball";
-import { readIntent, attachLocalKeys } from "../input/localKeys";
-import { blockInputFor } from "../input/localKeys";
+import { attachLocalInput, readIntent, blockInputFor } from "../input";
 
 import { createBounces } from "../scene/Bounces";
 
@@ -147,11 +146,11 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
   };
 
   // Local keyboard input
-  const detachKeys = attachLocalKeys(canvas);
-  scene.onDisposeObservable.add(detachKeys);
+  const detachInput = attachLocalInput(canvas);
+  scene.onDisposeObservable.add(detachInput);
 
   const { start, stop } = createLifecycle(engine, scene, {
-    logicHz: 120,
+    logicHz: 60,
     hiddenLogicHz: 15,
     update: (dtMs) => {
       const dt = Math.min(0.05, dtMs / 1000);
