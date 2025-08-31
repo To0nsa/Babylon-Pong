@@ -6,13 +6,10 @@ import { addSpaceBackground } from "../scene";
 
 /**
  * Create a Babylon Scene only.
- * - No objects are created here.
- * - Background color uses provided theme or falls back to DefaultTheme.
  */
 export function createScene(engine: Engine) {
   const scene = new Scene(engine);
-
-  addSpaceBackground(scene);
-
+  const bg = addSpaceBackground(scene);
+  scene.onDisposeObservable.add(() => bg.dispose());
   return { scene };
 }

@@ -10,7 +10,6 @@ import { Colors } from "./Color";
 export type BallHandle = {
   root: TransformNode;
   mesh: AbstractMesh;
-  recolor: (color: Color3) => void;
   dispose: () => void;
 };
 
@@ -18,29 +17,27 @@ export function addBall(
   scene: Scene,
   table: { root: TransformNode; tableTop: AbstractMesh },
 ): BallHandle {
-  const color = Colors.ball;
   const radius = 0.03;
 
   const root = new TransformNode("ball-root", scene);
   root.parent = table.root;
 
+  // Spawn safely under the table; visuals/bounces will position it for serves.
   const y = table.tableTop.position.y - 30;
+
   const mesh = MeshBuilder.CreateSphere(
     "ball",
     { diameter: radius * 2, segments: 16 },
     scene,
   );
-  mesh.position.set(0, y, 0);
   mesh.parent = root;
+  mesh.position.set(0, y, 0);
+  mesh.isPickable = false;
 
   const mat = new StandardMaterial("ball-mat", scene);
-  mat.diffuseColor = color.clone();
-  mat.specularColor = new Color3(0.02, 0.02, 0.02);
+  mat.diffuseColor = Colors.ball.clone();
+  mat.specularColor = Color3.Black();
   mesh.material = mat;
-
-  const recolor = (c: Color3) => {
-    mat.diffuseColor.copyFrom(c);
-  };
 
   const dispose = () => {
     mesh.dispose();
@@ -48,5 +45,5 @@ export function addBall(
     root.dispose();
   };
 
-  return { root, mesh, recolor, dispose };
+  return { root, mesh, dispose };
 }
