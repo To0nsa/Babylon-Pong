@@ -1,10 +1,10 @@
-// src/core/scene/TennisTable.ts
+// src/core/scene/TennisTable.ts  (a.k.a. client/scene/mesh/Table.ts)
 import { Scene } from "@babylonjs/core/scene";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
-import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { Colors } from "../sceneColor";
+import { makeNeonGlass, makeNeonLine } from "../materials/neonGlass";
 
 export type TableHandle = {
   root: TransformNode;
@@ -20,9 +20,9 @@ export function addTable(scene: Scene): TableHandle {
   const depth  = 0.05;  // Y
 
   // Line widths (meters)
-  const borderW       = 0.02;
-  const centerWidthW  = 0.003; // horizontal across X (thickness along Z)
-  const centerLengthW = 0.003; // vertical across Z (thickness along X)
+  const borderW       = 0.04;
+  const centerWidthW  = 0.004; // horizontal across X (thickness along Z)
+  const centerLengthW = 0.004; // vertical across Z (thickness along X)
 
   // Root
   const root = new TransformNode("table-root", scene);
@@ -36,18 +36,22 @@ export function addTable(scene: Scene): TableHandle {
   depthBox.position.y = -depth / 2;
   depthBox.parent = root;
 
-  // Matte materials
-  const tableDepthMat = new StandardMaterial("table-depth-mat", scene);
-  tableDepthMat.diffuseColor  = Colors.tableDepth;
-  tableDepthMat.specularColor = Colors.material.specularNone;
-
-  const topMat = new StandardMaterial("tableTopMat", scene);
-  topMat.diffuseColor  = Colors.tableTop;
-  topMat.specularColor = Colors.material.specularNone;
-
-  const lineMat = new StandardMaterial("tableLineMat", scene);
-  lineMat.diffuseColor  = Colors.tableBorder;
-  lineMat.specularColor = Colors.material.specularNone;
+  // === Neon materials via shared factory ====================================
+  const neonBase = Colors.tableTop.clone().scale(1.2);
+  const tableDepthMat = makeNeonGlass(scene, neonBase, {
+    alpha: 0.14,
+    rimScale: 1.6,
+    emissiveScale: 0.2,
+  });
+  const topMat = makeNeonGlass(scene, neonBase, {
+    alpha: 0.18,
+    rimScale: 1.8,
+    emissiveScale: 0.2,
+  });
+  const lineMat = makeNeonLine(scene, neonBase, {
+    alpha: 1.0,
+    intensity: 0.5,
+  });
 
   // Apply slab material
   depthBox.material = tableDepthMat;
@@ -63,7 +67,7 @@ export function addTable(scene: Scene): TableHandle {
   top.parent = root;
   top.material = topMat;
 
-  // === Lines as thin strips (no textures) ===
+  // === Lines as thin strips (additive emissive) =============================
   const lineY = top.position.y + topHeight / 2; // hover above top
 
   const makeStrip = (

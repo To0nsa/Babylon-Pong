@@ -1,10 +1,10 @@
 // src/core/scene/Paddle.ts
 import { Scene } from "@babylonjs/core/scene";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
-import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { Colors } from "../sceneColor";
+import { makeGlass } from "../materials/glass";
 
 export type PaddleHandle = {
   root: TransformNode;
@@ -37,11 +37,24 @@ export function addPaddle(
   mesh.parent = root;
   mesh.isPickable = false;
 
-  // Matte material (color from centralized palette)
-  const mat = new StandardMaterial(`paddleMat:${side}`, scene);
-  mat.diffuseColor =
-    (side === "left" ? Colors.paddleLeft : Colors.paddleRight).clone();
-  mat.specularColor = Colors.material.specularNone;
+  // Glass material: subtle per-side tint (keeps team color coding)
+  const tint =
+    side === "left" ? Colors.paddleLeft.clone()
+                    : Colors.paddleRight.clone();
+
+  const mat = makeGlass(scene, tint, {
+    // Keep the same glass look but denser & more tinted:
+    opacity: 0.90,         // closer to 1 = more opaque
+    tintDistance: 0.05,    // lower = tint accumulates fast (denser color)
+    thickness: 0.6,        // higher = denser absorption
+    tintStrength: 1.0,     // >1 for extra saturation if you want
+    refraction: 0.8,       // a bit less see-through than 1.0
+    roughness: 0.05,       // slightly softer reflections
+    ior: 1.5,
+    clearCoat: 1.0,
+    backFaceCulling: false,
+  });
+
   mesh.material = mat;
   mat.freeze();
 
