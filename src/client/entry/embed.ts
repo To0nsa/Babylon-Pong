@@ -1,23 +1,28 @@
-// src/embed.ts
+// src/client/entry/embed.ts
 import { createEngine, createLifecycle } from "../engine";
 import { createWorld } from "../scene";
 import type { PongInstance } from "./types";
 import Logger from "../../shared/utils/Logger";
 
 import { createInitialState } from "../../game/state";
+import { bootAsRally } from "../../game/boot";
 import { stepPaddles } from "../../game/systems/paddle";
 import { stepBallAndCollisions } from "../../game/systems/ball";
-import { attachLocalInput, readIntent, blockInputFor } from "../input";
 
-import { createBounces, animateZToZero} from "../visuals";
+import { attachLocalInput, readIntent, blockInputFor } from "../input";
+import { createBounces } from "../visuals";
 
 import { FXManager } from "../FX/manager";
-import { decHide } from "../FX";
 
 import { createScoreboard } from "../ui";
 import "../ui/theme.css";
-
 import "./babylon.sidefx";
+
+import { computeBounds } from "./bounds";
+import { createPaddleAnimator } from "../visuals";
+import { detectEnteredServe, onEnteredServe } from "./serveCue";
+import { updateHUD } from "../ui/hudBinding";
+import { applyFrameEvents } from "./eventsToFX";
 
 Logger.setLevel("debug");
 
@@ -26,152 +31,86 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
 
   const { engine, engineDisposable } = createEngine(canvas);
   const world = createWorld(engine);
-  const { scene } = world;
-  const { table, paddles: { left, right }, ball } = world;
-
-  let animatingPaddlesUntil = 0;
+  const { scene, paddles: { left, right }, table, ball } = world;
 
   const hud = createScoreboard();
   hud.attachToCanvas(canvas);
 
-  // ===== Game logic bounds from actual geometry (render -> headless) =====
-  const tableBB = table.tableTop.getBoundingInfo().boundingBox;
-  const halfLengthX = tableBB.extendSize.x; // along X
-  const halfWidthZ = tableBB.extendSize.z; // along Z
+  // Bounds once (render → headless)
+  const { bounds, zMax } = computeBounds(world, 0.006);
 
-  const leftBB = left.mesh.getBoundingInfo().boundingBox;
-  const paddleHalfDepthZ = leftBB.extendSize.z; // paddle half-size along Z
-
-  const ballInfo = ball.mesh.getBoundingInfo();
-  const ballRadius = ballInfo.boundingSphere.radiusWorld;
-
-  const leftPaddleX = left.mesh.position.x;
-  const rightPaddleX = right.mesh.position.x;
-
-  const margin = 0.006;
-
-  const zMax = halfWidthZ - margin - ballRadius;
-
-  // centralize FX creation & triggers
+  // FX manager (centralized)
   const fx = new FXManager(scene, {
     wallZTop: +zMax,
     wallZBottom: -zMax,
     ballMesh: ball.mesh,
-    ballRadius,
+    ballRadius: bounds.ballRadius,
   });
 
-  //
+  // Visual bounce helper
   const Bounces = createBounces(
     ball.mesh,
     table.tableTop.position.y,
-    ballRadius,
-    halfLengthX,
+    bounds.ballRadius,
+    bounds.halfLengthX,
     left.mesh,
     right.mesh,
-    margin,
+    bounds.margin,
   );
-
   Bounces.scheduleServe(1);
-  //
 
-  // Create deterministic headless state
-  let state = createInitialState({
-    halfLengthX,
-    halfWidthZ,
-    paddleHalfDepthZ,
-    leftPaddleX,
-    rightPaddleX,
-    ballRadius,
-    margin,
-  });
+  // Headless state
+  let state = bootAsRally(createInitialState(bounds));
 
-  // Kick off an initial rally (straight serve to the right)
-  state = {
-    ...state,
-    phase: "rally",
-    ball: {
-      ...state.ball,
-      x: 0,
-      z: 0,
-      vx: state.params.ballSpeed,
-      vz: 0,
-    },
-  };
-
-  // Local keyboard input
+  // Input
   const detachInput = attachLocalInput(canvas);
   scene.onDisposeObservable.add(detachInput);
+
+  // Tiny animator gate
+  const paddleAnim = createPaddleAnimator(scene, left.mesh, right.mesh);
 
   const { start, stop } = createLifecycle(engine, scene, {
     logicHz: 60,
     update: (dtMs) => {
       const dt = Math.min(0.05, dtMs / 1000);
 
-      // 1) input → paddles
-      const intent = readIntent();
-      state = stepPaddles(state, intent, dt);
+      // 1) Input → paddles
+      state = stepPaddles(state, readIntent(), dt);
 
-      // 2) ball & collisions (now returns events)
+      // 2) Ball & collisions
+      const prevPhase = state.phase;
       const stepped = stepBallAndCollisions(state, dt);
-      const enteredServePhase =
-        (stepped.next.phase === "serveLeft" ||
-          stepped.next.phase === "serveRight") &&
-        state.phase !== "serveLeft" &&
-        state.phase !== "serveRight";
 
-      if (enteredServePhase) {
-        const dir = stepped.next.phase === "serveLeft" ? 1 : -1;
-        decHide(ball.mesh);
-        Bounces.scheduleServe(dir);
-
-        // Animate paddles to center over ~220ms
-        animateZToZero(scene, left.mesh, 220);
-        animateZToZero(scene, right.mesh, 220);
-
-        // During this window, skip projecting state->mesh for paddles (see step 4)
-        const ms = 240; // same as your animation duration (or slightly longer)
-        animatingPaddlesUntil = performance.now() + ms;
-        blockInputFor(ms);
+      // 3) Entered serve? Trigger cues
+      const entered = detectEnteredServe(prevPhase, stepped.next.phase);
+      if (entered) {
+        onEnteredServe(entered, {
+          ballMesh: ball.mesh,
+          Bounces,
+          paddleAnim,
+          blockInputFor,
+        });
       }
+
+      // 4) Commit state
       state = stepped.next;
 
-      hud.setScores(state.scores.left, state.scores.right);
-      hud.setServer(state.server);
-      hud.setDeuce(state.scores.left >= 10 && state.scores.right >= 10);
+      // 5) HUD
+      updateHUD(hud, state);
 
-      // 3) visual bounce Y
+      // 6) Visual bounce Y + project meshes
       const ballY = Bounces.update(state.ball.x, state.ball.vx);
-
-      // 4) project to meshes
       ball.mesh.position.set(state.ball.x, ballY, state.ball.z);
 
-      // If we're currently animating, let the animation drive Z.
-      // Otherwise, project logic state to meshes as usual.
-      if (performance.now() >= animatingPaddlesUntil) {
+      if (!paddleAnim.isAnimating()) {
         left.mesh.position.z = state.paddles.left.z;
         right.mesh.position.z = state.paddles.right.z;
       }
 
-      // 5) FX on explicit wall hit
-      if (stepped.events.wallHit) {
-        const { side, x } = stepped.events.wallHit;
-        fx.wallPulse(side, x, ballY);
-      }
-
-      if (stepped.events.explode) {
-        const { x, z } = stepped.events.explode;
-        fx.burstAt(x, ballY, z);
-      }
+      // 7) FX from events
+      applyFrameEvents(fx, stepped.events, ballY);
     },
   });
-
-  (async () => {
-    try {
-      //const profile = await fetchPlayerProfile("me");
-    } catch (e) {
-      Logger.warn("ProfileFetch", "Error while Fetching the profile.", e);
-    }
-  })();
 
   scene.onDisposeObservable.add(() => {
     world.dispose();
