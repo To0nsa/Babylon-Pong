@@ -39,17 +39,16 @@ export function addPaddle(
 
   // Glass material: subtle per-side tint (keeps team color coding)
   const tint =
-    side === "left" ? Colors.paddleLeft.clone()
-                    : Colors.paddleRight.clone();
+    side === "left" ? Colors.paddleLeft.clone() : Colors.paddleRight.clone();
 
   const mat = makeGlass(scene, tint, {
     // Keep the same glass look but denser & more tinted:
-    opacity: 0.90,         // closer to 1 = more opaque
-    tintDistance: 0.05,    // lower = tint accumulates fast (denser color)
-    thickness: 0.6,        // higher = denser absorption
-    tintStrength: 1.0,     // >1 for extra saturation if you want
-    refraction: 0.8,       // a bit less see-through than 1.0
-    roughness: 0.05,       // slightly softer reflections
+    opacity: 0.9, // closer to 1 = more opaque
+    tintDistance: 0.05, // lower = tint accumulates fast (denser color)
+    thickness: 0.6, // higher = denser absorption
+    tintStrength: 1.0, // >1 for extra saturation if you want
+    refraction: 0.8, // a bit less see-through than 1.0
+    roughness: 0.05, // slightly softer reflections
     ior: 1.5,
     clearCoat: 1.0,
     backFaceCulling: false,

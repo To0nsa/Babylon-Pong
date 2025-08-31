@@ -15,13 +15,13 @@ export type TableHandle = {
 
 export function addTable(scene: Scene): TableHandle {
   // Dimensions (meters)
-  const length = 2.74;  // X
-  const width  = 1.525; // Z
-  const depth  = 0.05;  // Y
+  const length = 2.74; // X
+  const width = 1.525; // Z
+  const depth = 0.05; // Y
 
   // Line widths (meters)
-  const borderW       = 0.04;
-  const centerWidthW  = 0.004; // horizontal across X (thickness along Z)
+  const borderW = 0.04;
+  const centerWidthW = 0.004; // horizontal across X (thickness along Z)
   const centerLengthW = 0.004; // vertical across Z (thickness along X)
 
   // Root
@@ -93,13 +93,13 @@ export function addTable(scene: Scene): TableHandle {
   const halfZ = width / 2;
   const strips: AbstractMesh[] = [
     // perimeter
-    makeStrip("border-left",  borderW, width,  -halfX + borderW / 2, 0),
-    makeStrip("border-right", borderW, width,   halfX - borderW / 2, 0),
-    makeStrip("border-top",   length,  borderW, 0,  halfZ - borderW / 2),
-    makeStrip("border-bottom",length,  borderW, 0, -halfZ + borderW / 2),
+    makeStrip("border-left", borderW, width, -halfX + borderW / 2, 0),
+    makeStrip("border-right", borderW, width, halfX - borderW / 2, 0),
+    makeStrip("border-top", length, borderW, 0, halfZ - borderW / 2),
+    makeStrip("border-bottom", length, borderW, 0, -halfZ + borderW / 2),
     // center cross
-    makeStrip("center-width",  length,        centerWidthW,  0, 0),
-    makeStrip("center-length", centerLengthW, width,         0, 0),
+    makeStrip("center-width", length, centerWidthW, 0, 0),
+    makeStrip("center-length", centerLengthW, width, 0, 0),
   ];
 
   // Optional perf: freeze static materials after assignment

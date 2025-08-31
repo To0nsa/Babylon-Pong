@@ -4,3 +4,4 @@ export * from "./mesh/Table";
 export * from "./mesh/Paddle";
 export * from "./mesh/Ball";
 export * from "./Background";
+export * from "./mesh/Net";

@@ -13,17 +13,17 @@ export function makePhysicalGlass(
   scene: Scene,
   tint: Color3 = new Color3(0.7, 0.85, 1.0),
   opts: {
-    ior?: number;            // ~1.5 for glass
-    roughness?: number;      // lower = sharper reflections
-    refraction?: number;     // 0..1 refracted contribution
-    clearCoat?: number;      // 0..1 coat intensity
+    ior?: number; // ~1.5 for glass
+    roughness?: number; // lower = sharper reflections
+    refraction?: number; // 0..1 refracted contribution
+    clearCoat?: number; // 0..1 coat intensity
     backFaceCulling?: boolean;
 
     // NEW CONTROLS
-    opacity?: number;        // 0..1 : 1 = more opaque (less see-through)
-    tintDistance?: number;   // how quickly tint accumulates (lower = denser color)
-    thickness?: number;      // virtual thickness in meters (higher = denser)
-    tintStrength?: number;   // scale applied to tint color (1 = unchanged)
+    opacity?: number; // 0..1 : 1 = more opaque (less see-through)
+    tintDistance?: number; // how quickly tint accumulates (lower = denser color)
+    thickness?: number; // virtual thickness in meters (higher = denser)
+    tintStrength?: number; // scale applied to tint color (1 = unchanged)
   } = {},
 ) {
   const {
@@ -35,7 +35,7 @@ export function makePhysicalGlass(
 
     opacity = 1.0,
     tintDistance = 1.0,
-    thickness = 0.4,       // bumped default for a denser look
+    thickness = 0.4, // bumped default for a denser look
     tintStrength = 1.0,
   } = opts;
 
@@ -45,7 +45,7 @@ export function makePhysicalGlass(
   m.albedoColor = Color3.White();
   m.useRadianceOverAlpha = true;
   m.transparencyMode = PBRMaterial.PBRMATERIAL_ALPHABLEND;
-  m.alpha = opacity;                         // raise toward 1.0 to be more opaque
+  m.alpha = opacity; // raise toward 1.0 to be more opaque
   m.backFaceCulling = backFaceCulling;
   m.separateCullingPass = true;
 
@@ -56,7 +56,7 @@ export function makePhysicalGlass(
   m.subSurface.tintColor = tint.clone().scale(tintStrength);
   m.subSurface.tintColorAtDistance = tintDistance; // lower = stronger tint per unit thickness
   m.subSurface.minimumThickness = 0.0;
-  m.subSurface.maximumThickness = thickness;       // higher = denser absorption
+  m.subSurface.maximumThickness = thickness; // higher = denser absorption
 
   // Crisp specular layer
   m.clearCoat.isEnabled = true;
@@ -73,14 +73,14 @@ export function makePhysicalGlass(
 export function makeSimpleGlass(
   scene: Scene,
   tint: Color3 = new Color3(0.7, 0.85, 1.0),
-  alpha = 0.25,             // 0 transparent .. 1 opaque
+  alpha = 0.25, // 0 transparent .. 1 opaque
 ) {
   const m = new StandardMaterial("glassSimple", scene);
   m.disableLighting = false;
-  m.diffuseColor = tint.clone();             // use tint directly
+  m.diffuseColor = tint.clone(); // use tint directly
   m.specularColor = Color3.White();
   m.emissiveColor = Color3.Black();
-  m.alpha = alpha;                           // raise toward 1 for more opaque
+  m.alpha = alpha; // raise toward 1 for more opaque
   m.alphaMode = Constants.ALPHA_COMBINE;
   m.backFaceCulling = false;
   m.separateCullingPass = true;

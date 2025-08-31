@@ -12,6 +12,7 @@ import { setupCamera } from "./camera/Camera";
 import { addTable, type TableHandle } from "./mesh/Table";
 import { addPaddle, type PaddleHandle } from "./mesh/Paddle";
 import { addBall, type BallHandle } from "./mesh/Ball";
+import { addNet, type NetHandle } from "./mesh/Net";
 
 import { Colors } from "./sceneColor";
 
@@ -23,6 +24,7 @@ export type WorldKit = {
   table: TableHandle;
   paddles: { left: PaddleHandle; right: PaddleHandle };
   ball: BallHandle;
+  net: NetHandle;
   /** Idempotent cleanup for all owned resources. */
   dispose: () => void;
 };
@@ -51,6 +53,7 @@ export function createWorld(engine: Engine): WorldKit {
   const left = addPaddle(scene, table, "left");
   const right = addPaddle(scene, table, "right");
   const ball = addBall(scene, table);
+  const net = addNet(scene, table);
 
   // Shadows
   const shadows = createSunShadows(lights.sun);
@@ -63,6 +66,7 @@ export function createWorld(engine: Engine): WorldKit {
       shadows.sg.dispose();
     } catch {}
     try {
+      net.dispose();
       ball.dispose();
       left.dispose();
       right.dispose();
@@ -82,6 +86,7 @@ export function createWorld(engine: Engine): WorldKit {
       shadows.sg.dispose();
     } catch {}
     try {
+      net.dispose();
       ball.dispose();
       left.dispose();
       right.dispose();
@@ -100,6 +105,7 @@ export function createWorld(engine: Engine): WorldKit {
     table,
     paddles: { left, right },
     ball,
+    net,
     dispose,
   };
 }

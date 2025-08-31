@@ -7,8 +7,8 @@ import { RafTicker } from "../../shared/utils/RafTicker";
 
 type LifecycleOptions = {
   update?: (dtMs: number) => void;
-  logicHz?: number;    // visible
-  hiddenHz?: number;   // hidden
+  logicHz?: number; // visible
+  hiddenHz?: number; // hidden
   maxSubStepsPerTick?: number;
 };
 
@@ -20,7 +20,7 @@ export function createLifecycle(
   const render = createRenderLoop(engine, scene);
 
   let visibleHz = Math.max(1, options.logicHz ?? 60);
-  let hiddenHz  = Math.max(1, options.hiddenHz ?? 5);
+  let hiddenHz = Math.max(1, options.hiddenHz ?? 5);
   const maxSubStepsPerTick = Math.max(1, options.maxSubStepsPerTick ?? 8);
 
   let accMs = 0;
@@ -68,8 +68,8 @@ export function createLifecycle(
 
   return {
     start() {
-      render.start();       // idempotent
-      logicTicker.start();  // idempotent
+      render.start(); // idempotent
+      logicTicker.start(); // idempotent
       onVisibility();
       document.addEventListener("visibilitychange", visHandler);
     },
@@ -82,7 +82,7 @@ export function createLifecycle(
 
     setRates({ visible, hidden }: { visible?: number; hidden?: number }) {
       if (visible) visibleHz = Math.max(1, visible);
-      if (hidden)  hiddenHz  = Math.max(1, hidden);
+      if (hidden) hiddenHz = Math.max(1, hidden);
       const stepMs = 1000 / (document.hidden ? hiddenHz : visibleHz);
       accMs = Math.min(accMs, stepMs);
       onVisibility();

@@ -31,7 +31,12 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
 
   const { engine, engineDisposable } = createEngine(canvas);
   const world = createWorld(engine);
-  const { scene, paddles: { left, right }, table, ball } = world;
+  const {
+    scene,
+    paddles: { left, right },
+    table,
+    ball,
+  } = world;
 
   const hud = createScoreboard();
   hud.attachToCanvas(canvas);

@@ -41,6 +41,10 @@ export function animateZTo(
 }
 
 /** Convenience: animate to z = 0. */
-export function animateZToZero(scene: Scene, mesh: AbstractMesh, ms = 220): void {
+export function animateZToZero(
+  scene: Scene,
+  mesh: AbstractMesh,
+  ms = 220,
+): void {
   animateZTo(scene, mesh, 0, ms, "paddleCenterZ");
 }

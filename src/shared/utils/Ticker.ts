@@ -6,7 +6,10 @@ export class Ticker {
   private last = 0;
   private hz: number;
 
-  constructor(private cb: TickFn, hz = 60) {
+  constructor(
+    private cb: TickFn,
+    hz = 60,
+  ) {
     this.hz = Math.max(1, hz);
   }
 

@@ -23,7 +23,7 @@ export function addSpaceBackground(
   opts: SpaceBackgroundOptions = {},
 ) {
   const {
-    starDensity = 0.0010,
+    starDensity = 0.001,
     starIntensity = 1.0,
     starColor = new Color3(1, 1, 1),
     backgroundColor = new Color3(0.01, 0.01, 0.05),

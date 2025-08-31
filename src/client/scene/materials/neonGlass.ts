@@ -26,7 +26,7 @@ export function makeNeonGlass(
   fres.power = 2.0;
   fres.bias = 0.2;
   fres.leftColor = base.clone().scale(rimScale); // edge glow
-  fres.rightColor = base.clone().scale(0.25);    // interior falloff
+  fres.rightColor = base.clone().scale(0.25); // interior falloff
   m.emissiveFresnelParameters = fres;
 
   return m;
