@@ -4,22 +4,26 @@ export type TickFn = (dtMs: number) => void;
 export class Ticker {
   private timer: number | null = null;
   private last = 0;
-  private hz = 60;
-  private cb: TickFn;
+  private hz: number;
 
-  constructor(cb: TickFn, hz = 60) {
-    this.cb = cb;
-    this.setHz(hz);
-  }
-
-  setHz(hz: number) {
+  constructor(private cb: TickFn, hz = 60) {
     this.hz = Math.max(1, hz);
-    if (this.timer !== null) this.start(); // restart with new rate
   }
 
-  start() {
+  setHz(hz: number): void {
+    const clamped = Math.max(1, hz);
+    if (this.hz === clamped) return;
+    this.hz = clamped;
+    if (this.timer !== null) {
+      // restart so the new cadence actually takes effect
+      this.stop();
+      this.start();
+    }
+  }
+
+  start(): void {
     if (this.timer !== null) return;
-    const intervalMs = Math.round(1000 / this.hz);
+    const intervalMs = Math.max(1, Math.round(1000 / this.hz));
     this.last = performance.now();
     this.timer = setInterval(() => {
       const now = performance.now();
@@ -29,7 +33,7 @@ export class Ticker {
     }, intervalMs) as unknown as number;
   }
 
-  stop() {
+  stop(): void {
     if (this.timer === null) return;
     clearInterval(this.timer);
     this.timer = null;

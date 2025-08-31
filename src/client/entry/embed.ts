@@ -138,7 +138,6 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
 
   const { start, stop } = createLifecycle(engine, scene, {
     logicHz: 60,
-    hiddenLogicHz: 15,
     update: (dtMs) => {
       const dt = Math.min(0.05, dtMs / 1000);
 
