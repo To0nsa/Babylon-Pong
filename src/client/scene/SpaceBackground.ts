@@ -14,10 +14,6 @@ export interface SpaceBackgroundOptions {
   starColor?: Color3;
   /** RGB for “space” */
   backgroundColor?: Color3;
-  /** Enable subtle twinkle (time-based); default false for deterministic playback */
-  twinkle?: boolean;
-  /** Twinkle speed when enabled */
-  timeScale?: number;
   /** Diameter of the sky sphere */
   diameter?: number;
 }
@@ -27,13 +23,11 @@ export function addSpaceBackground(
   opts: SpaceBackgroundOptions = {},
 ) {
   const {
-    starDensity = 0.0025,
+    starDensity = 0.0010,
     starIntensity = 1.0,
     starColor = new Color3(1, 1, 1),
-    backgroundColor = new Color3(0.01, 0.01, 0.02),
-    twinkle = false,
-    timeScale = 0.25,
-    diameter = 1000,
+    backgroundColor = new Color3(0.01, 0.01, 0.05),
+    diameter = 50,
   } = opts;
 
   // Register minimal shaders (scoped names)
@@ -59,11 +53,9 @@ export function addSpaceBackground(
       uniform vec3 uBgColor;
       uniform float uDensity;
       uniform float uIntensity;
-      uniform float uTime;    // seconds, may be 0 for deterministic
 
       // Hash without branches (deterministic for a given vDir)
       float hash31(vec3 p) {
-        // Project to 1D then sine noise
         float h = dot(p, vec3(12.9898, 78.233, 45.164));
         return fract(sin(h) * 43758.5453);
       }
@@ -78,17 +70,10 @@ export function addSpaceBackground(
         // Star threshold from density: lower density -> rarer stars
         float star = step(1.0 - uDensity, seed);
 
-        // Star “softness”: use a second hash to vary intensity a bit
+        // Use a second hash to vary intensity a bit (static, no time)
         float sparkle = hash31(vDir.zxy * 1.7 + 3.14159);
 
-        // Optional tiny twinkle (very subtle)
-        float tw = 1.0;
-        if (uTime > 0.0) {
-          // slow, low-amplitude
-          tw = 0.85 + 0.15 * sin(6.28318 * (sparkle + uTime));
-        }
-
-        float brightness = star * (0.6 + 0.4 * sparkle) * tw * uIntensity;
+        float brightness = star * (0.6 + 0.4 * sparkle) * uIntensity;
         col = mix(col, uStarColor, brightness);
 
         gl_FragColor = vec4(col, 1.0);
@@ -108,7 +93,6 @@ export function addSpaceBackground(
         "uBgColor",
         "uDensity",
         "uIntensity",
-        "uTime",
       ],
       needAlphaBlending: false,
       needAlphaTesting: false,
@@ -116,13 +100,12 @@ export function addSpaceBackground(
   );
 
   material.backFaceCulling = false;
-  //material.disableLighting = true;
+  // material.disableLighting = true;
 
   material.setColor3("uStarColor", starColor);
   material.setColor3("uBgColor", backgroundColor);
   material.setFloat("uDensity", Math.max(0.0, Math.min(1.0, starDensity)));
   material.setFloat("uIntensity", Math.max(0.0, starIntensity));
-  material.setFloat("uTime", 0.0); // 0 by default => deterministic
 
   const sky = MeshBuilder.CreateSphere(
     "spaceSkySphere",
@@ -134,15 +117,7 @@ export function addSpaceBackground(
   sky.infiniteDistance = true; // keep centered on camera
   sky.doNotSyncBoundingInfo = true;
 
-  let t = 0;
-  const obs = scene.onBeforeRenderObservable.add(() => {
-    if (!twinkle) return;
-    t += scene.getEngine().getDeltaTime() * 0.001 * timeScale;
-    material.setFloat("uTime", t);
-  });
-
   const dispose = () => {
-    scene.onBeforeRenderObservable.remove(obs);
     sky.dispose(false, true);
     material.dispose(true, true);
   };
