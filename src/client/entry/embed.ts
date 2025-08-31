@@ -1,13 +1,8 @@
 // src/embed.ts
-import { createEngine } from "../engine";
-import { createScene, addTable, addPaddle, addBall } from "../scene";
-import { setupCamera } from "../scene/camera";
-import { setupLights, createSunShadows } from "../scene/light";
-import { createLifecycle } from "../engine/Lifecycle";
+import { createEngine, createLifecycle } from "../engine";
+import { createWorld } from "../scene";
 import type { PongInstance } from "./types";
 import Logger from "../../shared/utils/Logger";
-
-// import { fetchPlayerProfile } from "../api/player";
 
 import { createInitialState } from "../../game/state";
 import { stepPaddles } from "../../game/systems/paddle";
@@ -64,18 +59,9 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
   canvas.tabIndex = 1;
 
   const { engine, engineDisposable } = createEngine(canvas);
-  const { scene } = createScene(engine);
-  const { sun } = setupLights(scene);
-  setupCamera(scene);
-
-  const table = addTable(scene);
-  const left = addPaddle(scene, table, "left");
-  const right = addPaddle(scene, table, "right");
-  const ball = addBall(scene, table);
-
-  const { sg, addCasters, setReceives } = createSunShadows(sun);
-  addCasters(ball.mesh, left.mesh, right.mesh);
-  setReceives(table.tableTop, table.tableDepth);
+  const world = createWorld(engine);
+  const { scene } = world;
+  const { table, paddles: { left, right }, ball } = world;
 
   let animatingPaddlesUntil = 0;
 
@@ -223,11 +209,7 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
   })();
 
   scene.onDisposeObservable.add(() => {
-    ball.dispose();
-    left.dispose();
-    right.dispose();
-    table.dispose();
-    sg.dispose();
+    world.dispose();
     fx.dispose();
     hud.dispose();
   });
