@@ -8,7 +8,7 @@ import type { Scene } from "@babylonjs/core/scene";
 /** Simple hemispheric light: soft key + subtle ground bounce. */
 export function setupLight(scene: Scene) {
   const light = new HemisphericLight("light", new Vector3(0, 1, 0), scene);
-  light.intensity = 0.5;
+  light.intensity = 0.3;
   light.diffuse = Color3.White();
   light.specular = Color3.Black();
   light.groundColor = new Color3(0.2, 0.2, 0.25);

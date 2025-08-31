@@ -1,8 +1,8 @@
 // src/embed.ts
 import { createEngine } from "../engine";
-import { createScene, addTennisTable, addPaddle, addBall } from "../scene";
-import { setupCamera } from "../camera";
-import { setupLights, createSunShadows } from "../light";
+import { createScene, addTable, addPaddle, addBall } from "../scene";
+import { setupCamera } from "../scene/camera";
+import { setupLights, createSunShadows } from "../scene/light";
 import { createLifecycle } from "../engine/Lifecycle";
 import type { PongInstance } from "./types";
 import Logger from "../../shared/utils/Logger";
@@ -68,7 +68,7 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
   const { sun } = setupLights(scene);
   setupCamera(scene);
 
-  const table = addTennisTable(scene);
+  const table = addTable(scene);
   const left = addPaddle(scene, table, "left");
   const right = addPaddle(scene, table, "right");
   const ball = addBall(scene, table);

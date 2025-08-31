@@ -5,7 +5,7 @@ import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { Color3 } from "@babylonjs/core/Maths/math.color";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
-import { Colors } from "./Color";
+import { Colors } from "../sceneColor";
 
 export type BallHandle = {
   root: TransformNode;

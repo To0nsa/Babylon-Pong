@@ -3,7 +3,7 @@ import "@babylonjs/core/Lights/Shadows/shadowGeneratorSceneComponent";
 import type { DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
 import { ShadowGenerator } from "@babylonjs/core/Lights/Shadows/shadowGenerator";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
-import { isMobile } from "../utils/isMobile";
+import { isMobile } from "../../utils/isMobile";
 
 export function createSunShadows(sun: DirectionalLight) {
   const mapSize = isMobile() ? 1024 : 2048; // ↑ crisper
