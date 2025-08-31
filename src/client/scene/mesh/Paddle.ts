@@ -10,73 +10,56 @@ import { Colors } from "../sceneColor";
 export type PaddleHandle = {
   root: TransformNode;
   mesh: AbstractMesh;
-  /** Dynamically update the paddle color (used by centralized theming). */
-  recolor: (color: Color3) => void;
   dispose: () => void;
 };
 
-/**
- * Creates a paddle and auto-positions it against the given table’s top mesh.
- * The paddle is parented to the table root so it follows any table transform.
- * - Boots with DefaultTheme; later recolored by applyTheme(PlayerTheme).
- */
+export const PADDLE_SIZE = Object.freeze({
+  width: 0.035,
+  height: 0.15,
+  depth: 0.3,
+});
+export const PADDLE_MARGIN = 0.006;
+
 export function addPaddle(
   scene: Scene,
   table: { root: TransformNode; tableTop: AbstractMesh },
   side: "left" | "right",
 ): PaddleHandle {
-  // Fixed geometry defaults
-  const margin = 0.006; // small gap from the edge
-  const size = { width: 0.035, height: 0.15, depth: 0.3 };
-
-  // Themed boot color
-  const color = side === "left" ? Colors.paddleLeft : Colors.paddleRight;
-
-  // Parent for easy cleanup & to inherit table transforms
+  // Parent
   const root = new TransformNode(`paddleRoot:${side}`, scene);
   root.parent = table.root;
 
-  // Build paddle mesh
+  // Mesh
   const mesh = MeshBuilder.CreateBox(
     `paddle:${side}`,
-    { width: size.width, height: size.height, depth: size.depth },
+    { ...PADDLE_SIZE },
     scene,
   );
   mesh.parent = root;
+  mesh.isPickable = false;
 
-  // Material (color only)
+  // Matte material (color from centralized palette)
   const mat = new StandardMaterial(`paddleMat:${side}`, scene);
-  mat.diffuseColor = color.clone();
-  mat.specularColor = Color3.Black();
+  mat.diffuseColor =
+    (side === "left" ? Colors.paddleLeft : Colors.paddleRight).clone();
+  mat.specularColor = Color3.Black(); // no highlights
   mesh.material = mat;
+  mat.freeze();
 
-  // Read table dimensions from the actual mesh bounds
-  const bb = table.tableTop.getBoundingInfo().boundingBox;
-  const halfLenX = bb.extendSize.x; // half of table length (X axis)
-  const tableTopY = table.tableTop.position.y;
-
-  // Push paddle against left/right inner edge, with margin
+  // Place against inner edge with a margin; sit on top of the table
+  const halfLenX = table.tableTop.getBoundingInfo().boundingBox.extendSize.x;
   const sign = side === "left" ? -1 : 1;
-  const x = sign * (halfLenX - margin - size.width / 2);
+  mesh.position.set(
+    sign * (halfLenX - PADDLE_MARGIN - PADDLE_SIZE.width / 2),
+    table.tableTop.position.y + PADDLE_SIZE.height / 2,
+    0,
+  );
 
-  // Sit on top of the table
-  const y = tableTopY + size.height / 2;
-
-  mesh.position.set(x, y, 0);
-
-  // Expose recolor for centralized theming
-  const recolor = (c: Color3) => {
-    mat.diffuseColor.copyFrom(c);
+  const dispose = () => {
+    mesh.dispose();
+    mat.dispose();
+    root.dispose();
   };
 
-  return {
-    root,
-    mesh,
-    recolor,
-    dispose: () => {
-      mesh.dispose();
-      mat.dispose();
-      root.dispose();
-    },
-  };
+  return { root, mesh, dispose };
 }
