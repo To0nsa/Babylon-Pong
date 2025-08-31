@@ -14,7 +14,7 @@ import { stepPaddles } from "../../game/systems/paddle";
 import { stepBallAndCollisions } from "../../game/systems/ball";
 import { attachLocalInput, readIntent, blockInputFor } from "../input";
 
-import { createBounces } from "../scene/Bounces";
+import { createBounces } from "../visuals";
 
 import { FXManager } from "../FX/manager";
 import { decHide } from "../FX";
@@ -116,6 +116,7 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
     halfLengthX,
     left.mesh,
     right.mesh,
+    margin,
   );
 
   Bounces.scheduleServe(1);

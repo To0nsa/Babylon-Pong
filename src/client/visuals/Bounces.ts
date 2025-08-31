@@ -1,41 +1,10 @@
-// src/client/scene/Bounces.ts
+// src/client/visuals/Bounces.ts
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { deriveSeed, LcgRng } from "../../shared/utils";
+import { clamp01, quadBezierY } from "./bounceMath";
+import { aimYWithFraction } from "./paddleAim";
+import type { Segment, Sign } from "./types";
 
-type Sign = -1 | 1;
-
-type Segment = {
-  startX: number;
-  targetX: number;
-  y0: number;
-  y1: number;
-  peakOffset: number;
-  type: "arc" | "linear";
-  side?: "left" | "right";
-  aimFrac?: number;
-};
-
-// ----------------------------- small utilities -----------------------------
-const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
-
-const quadBezierY = (
-  u: number,
-  y0: number,
-  y1: number,
-  peakOffset: number,
-): number => {
-  const peakY = Math.max(y0, y1) + peakOffset; // apex at u=0.5
-  const one = 1 - u;
-  return one * one * y0 + 2 * one * u * peakY + u * u * y1;
-};
-
-const aimYWithFraction = (paddle: AbstractMesh, frac01: number): number => {
-  const h = paddle.getBoundingInfo().boundingBox.extendSize.y || 1e-6;
-  const cy = paddle.position.y;
-  return cy - h + 2 * h * frac01;
-};
-
-// ----------------------------- factory -------------------------------------
 export function createBounces(
   ballMesh: AbstractMesh,
   tableTopY: number,
@@ -43,12 +12,14 @@ export function createBounces(
   halfLengthX: number,
   leftPaddle: AbstractMesh,
   rightPaddle: AbstractMesh,
+  margin: number,
 ) {
   const baseY = tableTopY + ballRadius / 2;
+  const paddleHeight = leftPaddle.getBoundingInfo().boundingBox.extendSize.y;
 
   const BASE_LAND = 0.6;
   const JITTER_RANGE = 1.0;
-  const MIN_LAND = 0.55;
+  const MIN_LAND = 0.4;
   const MAX_LAND = 0.75;
 
   const MIN_AIM = 0.6;
@@ -58,7 +29,7 @@ export function createBounces(
   const MAX_ARC = 0.5;
 
   // absolute goal-line x (positive magnitude); left goal is -goalX, right is +goalX
-  const goalX = halfLengthX + ballRadius;
+  const goalX = halfLengthX + margin + ballRadius;
 
   const rng = new LcgRng(deriveSeed(halfLengthX * 1000));
   const rand01 = () => rng.next();
@@ -71,7 +42,6 @@ export function createBounces(
 
   const nextAimFraction = (): number =>
     MIN_AIM + rand01() * (MAX_AIM - MIN_AIM);
-
   const nextArcHeight = (): number => MIN_ARC + rand01() * (MAX_ARC - MIN_ARC);
 
   const clampX = (x: number) =>
@@ -99,7 +69,7 @@ export function createBounces(
   let lastApproachSlope = 0;
 
   // Latches the visual freeze Y for the “miss to goal” case
-  let freezeY: number;
+  let freezeY: number = baseY;
 
   // ---- helpers to schedule segments -------------------------------------------------
 
@@ -133,7 +103,7 @@ export function createBounces(
     if (!forward) return;
 
     const aimFrac = nextAimFraction();
-    const y1 = aimYWithFraction(s.paddle, aimFrac);
+    const y1 = aimYWithFraction(s.paddle, aimFrac, paddleHeight);
 
     // slope of approach from baseY at fromX to y1 at plane
     const dx = plane - fromX;
@@ -202,6 +172,9 @@ export function createBounces(
 
   // ----------------------------- per-frame update ------------------------------------
   const update = (currentX: number, currentVX: number): number => {
+    if (!queue.length) {
+      return freezeY;
+    }
     // 1) If ball is at or beyond the goal line, prefer the latched miss-end Y.
     if (Math.abs(currentX) >= goalX) {
       clear();
@@ -218,8 +191,8 @@ export function createBounces(
     // 4) Keep approach aim live with paddle motion (for the current segment).
     const seg = queue[0];
     if (seg.type === "linear" && seg.side) {
-      const p = side[seg.side].paddle;
-      seg.y1 = aimYWithFraction(p, seg.aimFrac!);
+      const p = (seg.side === "left" ? side.left : side.right).paddle;
+      seg.y1 = aimYWithFraction(p, seg.aimFrac!, paddleHeight);
     }
 
     // 5) Integrate current segment.
@@ -237,16 +210,14 @@ export function createBounces(
       yNow = seg.y1;
       const finished = queue.shift();
 
-      // 6) MISS handling: if we just finished the approach-to-paddle segment
-      // and no vx flip happened, extend to goal (or compute freezeY immediately).
+      // 6) MISS handling…
       if (
         finished &&
         finished.type === "linear" &&
-        finished.side && // approach-to-paddle segments carry a side
+        finished.side &&
         queue.length === 0 &&
-        sign === lastVXSign // still same vx sign => no bounce => miss
+        sign === lastVXSign
       ) {
-        // Recompute final approach slope (paddle may have moved during approach).
         const dxFinal = finished.targetX - finished.startX;
         if (dxFinal !== 0) {
           lastApproachSlope = (finished.y1 - finished.y0) / dxFinal;
@@ -254,13 +225,11 @@ export function createBounces(
 
         const alreadyAtOrBeyondGoal = Math.abs(currentX) >= goalX;
         if (alreadyAtOrBeyondGoal) {
-          // No time to enqueue: compute the miss-end Y right now and latch it.
           const startX = pendingArcStart.x;
           const startY = pendingArcStart.y;
           const targetX = sign > 0 ? +goalX : -goalX;
           freezeY = startY + lastApproachSlope * (targetX - startX);
         } else {
-          // Normal case: append the linear extension to goal and latch freezeY there.
           scheduleMissExtensionToFreeze(sign);
         }
       }
@@ -271,7 +240,6 @@ export function createBounces(
           : seg.y0 + (seg.y1 - seg.y0) * u;
     }
 
-    ballMesh.position.y = yNow;
     return yNow;
   };
 
