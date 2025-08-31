@@ -2,7 +2,6 @@
 import type { Scene } from "@babylonjs/core/scene";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
-import { Color3 } from "@babylonjs/core/Maths/math.color";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { Colors } from "../sceneColor";
@@ -36,7 +35,7 @@ export function addBall(
 
   const mat = new StandardMaterial("ball-mat", scene);
   mat.diffuseColor = Colors.ball.clone();
-  mat.specularColor = Color3.Black();
+  mat.specularColor = Colors.material.specularNone;
   mesh.material = mat;
 
   const dispose = () => {

@@ -13,6 +13,8 @@ import { addTable, type TableHandle } from "./mesh/Table";
 import { addPaddle, type PaddleHandle } from "./mesh/Paddle";
 import { addBall, type BallHandle } from "./mesh/Ball";
 
+import { Colors } from "./sceneColor";
+
 export type WorldKit = {
   scene: Scene;
   camera: ArcRotateCamera;
@@ -35,7 +37,10 @@ export function createWorld(engine: Engine): WorldKit {
   const scene = new Scene(engine);
 
   // Background
-  const bg = addSpaceBackground(scene);
+  const bg = addSpaceBackground(scene, {
+    starColor: Colors.bg.star,
+    backgroundColor: Colors.bg.space,
+  });
 
   // Camera + lights
   const camera = setupCamera(scene);

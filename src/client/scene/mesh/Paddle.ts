@@ -2,7 +2,6 @@
 import { Scene } from "@babylonjs/core/scene";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
-import { Color3 } from "@babylonjs/core/Maths/math.color";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { Colors } from "../sceneColor";
@@ -42,7 +41,7 @@ export function addPaddle(
   const mat = new StandardMaterial(`paddleMat:${side}`, scene);
   mat.diffuseColor =
     (side === "left" ? Colors.paddleLeft : Colors.paddleRight).clone();
-  mat.specularColor = Color3.Black(); // no highlights
+  mat.specularColor = Colors.material.specularNone;
   mesh.material = mat;
   mat.freeze();
 

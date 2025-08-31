@@ -3,7 +3,6 @@ import { Scene } from "@babylonjs/core/scene";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
-import { Color3 } from "@babylonjs/core/Maths/math.color";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { Colors } from "../sceneColor";
 
@@ -39,16 +38,16 @@ export function addTable(scene: Scene): TableHandle {
 
   // Matte materials
   const tableDepthMat = new StandardMaterial("table-depth-mat", scene);
-  tableDepthMat.diffuseColor  = Colors.tableDepth.clone();
-  tableDepthMat.specularColor = Color3.Black();
+  tableDepthMat.diffuseColor  = Colors.tableDepth;
+  tableDepthMat.specularColor = Colors.material.specularNone;
 
   const topMat = new StandardMaterial("tableTopMat", scene);
-  topMat.diffuseColor  = Colors.tableTop.clone();
-  topMat.specularColor = Color3.Black();
+  topMat.diffuseColor  = Colors.tableTop;
+  topMat.specularColor = Colors.material.specularNone;
 
   const lineMat = new StandardMaterial("tableLineMat", scene);
-  lineMat.diffuseColor  = Colors.tableBorder.clone();
-  lineMat.specularColor = Color3.Black();
+  lineMat.diffuseColor  = Colors.tableBorder;
+  lineMat.specularColor = Colors.material.specularNone;
 
   // Apply slab material
   depthBox.material = tableDepthMat;
