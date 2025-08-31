@@ -1,9 +1,9 @@
 // src/client/visuals/Bounces.ts
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
-import { deriveSeed, LcgRng } from "../../shared/utils";
+import { deriveSeed, LcgRng } from "../../../shared/utils";
 import { clamp01, quadBezierY } from "./bounceMath";
 import { aimYWithFraction } from "./paddleAim";
-import type { Segment, Sign } from "./types";
+import type { Segment, Sign } from "../types";
 
 export function createBounces(
   ballMesh: AbstractMesh,

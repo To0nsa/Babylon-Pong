@@ -9,15 +9,10 @@ import { stepPaddles } from "../../game/systems/paddle";
 import { stepBallAndCollisions } from "../../game/systems/ball";
 import { attachLocalInput, readIntent, blockInputFor } from "../input";
 
-import { createBounces } from "../visuals";
+import { createBounces, animateZToZero} from "../visuals";
 
 import { FXManager } from "../FX/manager";
 import { decHide } from "../FX";
-
-import { Animation } from "@babylonjs/core/Animations/animation";
-import { CubicEase, EasingFunction } from "@babylonjs/core/Animations/easing";
-import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
-import { Scene } from "@babylonjs/core/scene";
 
 import { createScoreboard } from "../ui";
 import "../ui/theme.css";
@@ -25,35 +20,6 @@ import "../ui/theme.css";
 import "./babylon.sidefx";
 
 Logger.setLevel("debug");
-
-function animateZToZero(scene: Scene, mesh: AbstractMesh, ms = 220) {
-  const frameRate = 60;
-  const totalFrames = Math.max(1, Math.round((ms / 1000) * frameRate));
-
-  // Build a one-off Animation
-  const anim = new Animation(
-    "paddleCenterZ",
-    "position.z",
-    frameRate,
-    Animation.ANIMATIONTYPE_FLOAT,
-    Animation.ANIMATIONLOOPMODE_CONSTANT,
-  );
-
-  anim.setKeys([
-    { frame: 0, value: mesh.position.z },
-    { frame: totalFrames, value: 0 },
-  ]);
-
-  const ease = new CubicEase();
-  ease.setEasingMode(EasingFunction.EASINGMODE_EASEOUT);
-  anim.setEasingFunction(ease);
-
-  // Attach and play via scene.beginAnimation
-  mesh.animations =
-    mesh.animations?.filter((a) => a.name !== "paddleCenterZ") ?? [];
-  mesh.animations.push(anim);
-  scene.beginAnimation(mesh, 0, totalFrames, false /* loop = false */);
-}
 
 export function createPong(canvas: HTMLCanvasElement): PongInstance {
   canvas.tabIndex = 1;
