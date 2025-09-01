@@ -1,9 +1,9 @@
-// src/game/systems/step.ts
-import type { GameState } from "../model/state";
-import type { FrameEvents } from "../model/types";
-import { isFreezePhase, isServePhase } from "./utils";
-import { collideWalls, collidePaddle } from "./physics/collisions";
-import { maybeScoreAndFreeze } from "./scoring/scoring";
+// src/game/systems/timing/step.ts
+import type { GameState } from "../../model/state";
+import type { FrameEvents } from "../../model/types";
+import { isFreezePhase, isServePhase } from "../utils";
+import { collideWalls, collidePaddle } from "../physics";
+import { maybeScoreAndFreeze } from "../scoring";
 import { stepFreeze } from "./freeze";
 
 export function stepBallAndCollisions(
