@@ -1,5 +1,5 @@
 // src/game/systems/timing/freeze.ts
-import { MS_PER_S } from "game/constants";
+import { MS_PER_S } from "../../../game/constants";
 import type { TableEnd } from "shared/types";
 import type { GameState } from "../../model";
 import { serveFrom } from ".";

@@ -20,4 +20,4 @@ export type { Ruleset } from "./rules/types";
 export { createMatchController } from "./match/controller";
 
 // Constants
-export { FREEZE_DURATION_MS, EPS } from "./constants/constants";
+export { PAUSE_BETWEEN_POINTS_MS, EPS } from "./constants/constants";
