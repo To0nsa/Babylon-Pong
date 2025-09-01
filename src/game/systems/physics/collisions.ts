@@ -18,12 +18,12 @@ export function collideWalls(
     const overshoot = nextZ - zMax;
     z = zMax - overshoot;
     vz = -vz * s.params.restitutionWall;
-    wallHit = { side: "top", x, z };
+    wallHit = { side: "north", x, z };
   } else if (nextZ < -zMax && vz < 0) {
     const overshoot = -zMax - nextZ;
     z = -zMax + overshoot;
     vz = -vz * s.params.restitutionWall;
-    wallHit = { side: "bottom", x, z };
+    wallHit = { side: "south", x, z };
   } else {
     z = nextZ;
   }

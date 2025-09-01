@@ -13,11 +13,9 @@ export function stepBallAndCollisions(
   let s = { ...state };
   const events: FrameEvents = {};
 
-  if (s.phase === "gameOver")
-    return { next: s, events };
+  if (s.phase === "gameOver") return { next: s, events };
 
-  if (isServePhase(s.phase))
-    s = { ...s, phase: "rally" };
+  if (isServePhase(s.phase)) s = { ...s, phase: "rally" };
 
   if (isPauseBtwPoints(s.phase))
     return { next: stepPauseBtwPoints(s, dt), events };
@@ -25,8 +23,7 @@ export function stepBallAndCollisions(
   if (isRallyPhase(s.phase)) {
     const w = collideWalls(s, dt);
     s = w.s;
-    if (w.wallHit)
-      events.wallHit = w.wallHit;
+    if (w.wallHit) events.wallHit = w.wallHit;
 
     s = collidePaddle(s, dt);
     s = { ...s, ball: { ...s.ball, x: s.ball.x + s.ball.vx * dt } };

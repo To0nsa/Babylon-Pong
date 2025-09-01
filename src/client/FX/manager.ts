@@ -1,17 +1,17 @@
 // src/client/FX/manager.ts
 import type { Scene } from "@babylonjs/core/scene";
 import type { Vector3 } from "@babylonjs/core/Maths/math";
+import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
+import type { WallSide } from "../../shared/types";
 
 import { createFXContext, type FXContext } from "./context";
 import { createForceFieldFX } from "./ForceField";
 import { createGlowBurstFX } from "./Burst";
 
-export type Side = "top" | "bottom";
-
 export type FXManagerOptions = {
-  wallZTop: number;
-  wallZBottom: number;
-  ballMesh: import("@babylonjs/core/Meshes/abstractMesh").AbstractMesh;
+  wallZNorth: number;
+  wallZSouth: number;
+  ballMesh: AbstractMesh;
   ballRadius: number;
 };
 
@@ -31,8 +31,8 @@ export class FXManager {
 
     this.forceField = createForceFieldFX(
       this.ctx,
-      opts.wallZTop,
-      opts.wallZBottom,
+      opts.wallZNorth,
+      opts.wallZSouth,
       opts.ballRadius,
     );
 
@@ -45,7 +45,7 @@ export class FXManager {
   }
 
   /** Show a wall pulse (“force field”) on top/bottom at (x,y). */
-  wallPulse(side: Side, x: number, y: number) {
+  wallPulse(side: WallSide, x: number, y: number) {
     this.forceField.trigger(side, x, y);
   }
 

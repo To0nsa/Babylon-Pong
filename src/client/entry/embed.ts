@@ -50,8 +50,8 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
 
   // FX manager (centralized)
   const fx = new FXManager(scene, {
-    wallZTop: +zMax,
-    wallZBottom: -zMax,
+    wallZNorth: +zMax,
+    wallZSouth: -zMax,
     ballMesh: ball.mesh,
     ballRadius: bounds.ballRadius,
   });
@@ -63,7 +63,7 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
     bounds.ballRadius,
     bounds.halfLengthX,
     left.mesh,
-    right.mesh
+    right.mesh,
   );
   Bounces.scheduleServe(1);
 
@@ -105,9 +105,7 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
       const stepped = stepBallAndCollisions(state, dt);
 
       // 3) Match controller reacts to scoring / game over / match flow
-      const { state: controlled } = match.afterPhysicsStep(
-        stepped.next,
-      );
+      const { state: controlled } = match.afterPhysicsStep(stepped.next);
       state = controlled;
 
       // 4) Entered serve? Trigger cues (compare with final phase after controller)

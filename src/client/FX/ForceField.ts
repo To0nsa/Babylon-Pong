@@ -6,9 +6,8 @@ import { FresnelParameters } from "@babylonjs/core/Materials/fresnelParameters";
 import { Vector3 } from "@babylonjs/core/Maths/math";
 
 import type { FXContext } from "./context";
+import type { WallSide } from "../../shared/types";
 import { FXColors } from "./fxColors";
-
-import type { Side } from "./manager";
 
 /**
  * Hex “shield” pulse on top/bottom walls.
@@ -21,7 +20,7 @@ export function createForceFieldFX(
   wallZBottom: number,
   ballRadius: number,
 ): {
-  trigger: (side: Side, x: number, y: number) => void;
+  trigger: (side: WallSide, x: number, y: number) => void;
   dispose?: () => void;
 } {
   const { scene } = ctx;
@@ -29,8 +28,8 @@ export function createForceFieldFX(
   const lifeMs = 400;
   const hexRadius = ballRadius * 1.5;
 
-  function spawnPulse(side: Side, x: number, y: number) {
-    const z = side === "top" ? wallZTop : wallZBottom;
+  function spawnPulse(side: WallSide, x: number, y: number) {
+    const z = side === "north" ? wallZTop : wallZBottom;
     const hexMesh = MeshBuilder.CreateDisc(
       `ff-hex:${side}:${performance.now()}`,
       { radius: hexRadius, tessellation: 6, sideOrientation: Mesh.DOUBLESIDE },
@@ -78,7 +77,7 @@ export function createForceFieldFX(
   }
 
   return {
-    trigger(side: Side, x: number, y: number) {
+    trigger(side: WallSide, x: number, y: number) {
       spawnPulse(side, x, y);
     },
     // dispose?: no resources to keep;

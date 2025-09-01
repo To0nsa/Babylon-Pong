@@ -35,7 +35,6 @@ export function rotateService(s: GameState): {
   return { nextServer, nextTurns: s.params.servesPerTurn };
 }
 
-
 /** Determines the next serve from the given table end. */
 export function serveFrom(tableEnd: TableEnd, s: GameState): GameState {
   const dir = tableEnd === "east" ? 1 : -1;

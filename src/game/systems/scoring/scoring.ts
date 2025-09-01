@@ -6,7 +6,10 @@ import { rotateService } from "../flow";
 import { hasGameWinner } from "../flow";
 import type { TableEnd } from "shared/types";
 
-export function maybeScoreAndFreeze(s: GameState, events: FrameEvents): GameState {
+export function maybeScoreAndFreeze(
+  s: GameState,
+  events: FrameEvents,
+): GameState {
   const goalX = s.bounds.halfLengthX + s.bounds.ballRadius;
   const x = s.ball.x;
 
@@ -19,7 +22,12 @@ export function maybeScoreAndFreeze(s: GameState, events: FrameEvents): GameStat
   return s;
 }
 
-function handleGoalCross(tableEnd: TableEnd, s: GameState, events: FrameEvents, goalX: number): GameState {
+function handleGoalCross(
+  tableEnd: TableEnd,
+  s: GameState,
+  events: FrameEvents,
+  goalX: number,
+): GameState {
   let freezeX: number;
   if (tableEnd === "east") {
     freezeX = -goalX;

@@ -123,7 +123,7 @@ export function createInitialState(bounds: GameState["bounds"]): GameState {
 
     tPauseBtwGamesMs: undefined,
     gameWinner: undefined,
-    
+
     matchWinner: undefined,
 
     bounds,

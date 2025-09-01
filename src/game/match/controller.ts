@@ -34,7 +34,11 @@ export function createMatchController(
   let midSwapDoneThisGame = false;
   let initialServerThisGame: TableEnd = initialServer;
 
-  function addRulesToState(s: GameState, r: Ruleset, server: TableEnd): GameState {
+  function addRulesToState(
+    s: GameState,
+    r: Ruleset,
+    server: TableEnd,
+  ): GameState {
     return {
       ...s,
       server,
@@ -87,7 +91,10 @@ export function createMatchController(
       // Record game win
       gamesWon[game.gameWinner]++;
 
-      events.gameOver = { winner: game.gameWinner, gameIndex: currentGameIndex };
+      events.gameOver = {
+        winner: game.gameWinner,
+        gameIndex: currentGameIndex,
+      };
 
       const need = Math.ceil(rules.match.bestOf / 2);
       if (gamesWon.east >= need || gamesWon.west >= need) {
