@@ -24,6 +24,10 @@ import { detectEnteredServe, onEnteredServe } from "./serveCue";
 import { updateHUD } from "../ui/hudBinding";
 import { applyFrameEvents } from "./eventsToFX";
 
+// NEW: rules + match controller
+import { tableTennisRules } from "../../game/rules/presets";
+import { createMatchController } from "../../game/match/controller";
+
 Logger.setLevel("debug");
 
 export function createPong(canvas: HTMLCanvasElement): PongInstance {
@@ -64,8 +68,19 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
   );
   Bounces.scheduleServe(1);
 
-  // Headless state
+  // Headless state (start in rally for a quick preview; you can switch to pure serve boot)
   let state = bootAsRally(createInitialState(bounds));
+
+  // NEW: ruleset + match controller (best-of-5 by default)
+  const RULES = tableTennisRules({
+    match: {
+      bestOf: 5,
+      switchEndsEachGame: true,
+      decidingGameMidSwapAtPoints: 5,
+      alternateInitialServerEachGame: true,
+    },
+  });
+  const match = createMatchController(bounds, RULES, /* initial server */ "left");
 
   // Input
   const detachInput = attachLocalInput(canvas);
@@ -86,8 +101,33 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
       const prevPhase = state.phase;
       const stepped = stepBallAndCollisions(state, dt);
 
-      // 3) Entered serve? Trigger cues
-      const entered = detectEnteredServe(prevPhase, stepped.next.phase);
+      // 3) Match controller reacts to scoring / game over / match flow
+      const { state: controlled, events: matchEv } = match.afterPhysicsStep(stepped.next);
+      state = controlled;
+
+      if (matchEv.swapSidesNow) Logger.info("MATCH", "swapSidesNow");
+      if (matchEv.gameOver) Logger.info("MATCH", `Game ${matchEv.gameOver.gameIndex} won by ${matchEv.gameOver.winner}`);
+      if (matchEv.matchOver) Logger.info("MATCH", `Match won by ${matchEv.matchOver.winner}`);
+
+      // Handle match-level events
+      if (matchEv.swapSidesNow) {
+        // TODO: If you bind players to sides, flip names/controls here.
+        // For now, just log; visuals are symmetric.
+        Logger.info("MATCH", "swapSidesNow (new game or deciding-game mid-swap)");
+      }
+      if (matchEv.gameOver) {
+        Logger.info(
+          "MATCH",
+          `Game ${matchEv.gameOver.gameIndex} won by ${matchEv.gameOver.winner}`,
+        );
+      }
+      if (matchEv.matchOver) {
+        Logger.info("MATCH", `Match won by ${matchEv.matchOver.winner}`);
+        // Optional: display a banner or stop the loop; we keep running so users can admire victory.
+      }
+
+      // 4) Entered serve? Trigger cues (compare with final phase after controller)
+      const entered = detectEnteredServe(prevPhase, state.phase);
       if (entered) {
         onEnteredServe(entered, {
           ballMesh: ball.mesh,
@@ -96,9 +136,6 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
           blockInputFor,
         });
       }
-
-      // 4) Commit state
-      state = stepped.next;
 
       // 5) HUD
       updateHUD(hud, state);

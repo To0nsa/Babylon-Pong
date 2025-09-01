@@ -10,7 +10,7 @@ export type Ball = {
   vz: number;
 };
 
-export type Phase = "serveLeft" | "serveRight" | "rally" | "pointFreeze";
+export type Phase = "serveLeft" | "serveRight" | "rally" | "pointFreeze" | "gameOver";
 
 export type GameState = {
   paddles: { left: Paddle; right: Paddle };
@@ -18,11 +18,17 @@ export type GameState = {
   scores: { left: number; right: number };
   phase: Phase;
 
+  /** Remaining ms for point freeze (between rallies). */
   tFreezeMs?: number;
+  /** Which side will serve next after freeze. */
   nextServe?: Side;
 
+  /** Current server and remaining serves in the current turn. */
   server: Side;
   serviceTurnsLeft: number;
+
+  /** Set when phase === "gameOver". */
+  winner?: Side;
 
   bounds: {
     halfLengthX: number; // table half-length along X
@@ -33,15 +39,31 @@ export type GameState = {
     ballRadius: number;
     margin: number;
   };
+
   params: {
-    paddleSpeed: number; // m/s
-    ballSpeed: number; // base rally speed (m/s)
-    zEnglish: number; // how much paddle vz affects ball.vz (0..1+)
+    /** Gameplay/physics knobs */
+    paddleSpeed: number;      // m/s
+    ballSpeed: number;        // base rally speed (m/s)
+    zEnglish: number;         // how much paddle vz affects ball.vz (0..1+)
     restitutionWall: number;
+
+    /** Scoring/service rules (table-tennis style by default) */
+    targetScore: number;         // e.g. 11
+    winBy: number;               // e.g. 2
+    servesPerTurn: number;       // e.g. 2 (pre-deuce)
+    deuceServesPerTurn: number;  // e.g. 1 (at deuce)
+    /** Deuce threshold; default is targetScore - 1. */
+    deuceAt: number;
   };
 };
 
 export function createInitialState(bounds: GameState["bounds"]): GameState {
+  const targetScore = 11;
+  const winBy = 2;
+  const servesPerTurn = 2;
+  const deuceServesPerTurn = 1;
+  const deuceAt = targetScore - 1;
+
   return {
     paddles: { left: { z: 0, vz: 0 }, right: { z: 0, vz: 0 } },
     ball: { x: 0, z: 0, vx: 0, vz: 0 },
@@ -52,14 +74,22 @@ export function createInitialState(bounds: GameState["bounds"]): GameState {
     tFreezeMs: undefined,
     nextServe: undefined,
     server: "left",
-    serviceTurnsLeft: 2,
+    serviceTurnsLeft: servesPerTurn,
 
     bounds,
     params: {
+      // physics/gameplay
       paddleSpeed: 2.4,
       ballSpeed: 2.0,
       zEnglish: 0.75,
       restitutionWall: 1.0,
+
+      // scoring/service rules
+      targetScore,
+      winBy,
+      servesPerTurn,
+      deuceServesPerTurn,
+      deuceAt,
     },
   };
 }

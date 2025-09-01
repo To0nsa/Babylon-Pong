@@ -1,5 +1,5 @@
 // src/game/systems/ball.ts
-import type { GameState } from "../state";
+import type { GameState, Side } from "../state";
 
 export type FrameEvents = {
   wallHit?: { side: "top" | "bottom"; x: number; z: number };
@@ -24,7 +24,8 @@ function isFreezePhase(p: GameState["phase"]): p is "pointFreeze" {
 }
 
 function inDeuceMode(s: GameState): boolean {
-  return s.scores.left >= 10 && s.scores.right >= 10;
+  const deuceAt = s.params.deuceAt ?? s.params.targetScore - 1;
+  return s.scores.left >= deuceAt && s.scores.right >= deuceAt;
 }
 
 function serveFrom(side: "left" | "right", s: GameState): GameState {
@@ -52,22 +53,27 @@ function serveFrom(side: "left" | "right", s: GameState): GameState {
  * - Before deuce: 2 serves each (e.g., L,L,R,R, …)
  * - From 10–10 onward: alternate every point (L,R,L,R, …)
  */
-function rotateService(s: GameState): {
-  nextServer: "left" | "right";
-  nextTurns: number;
-} {
+function rotateService(s: GameState): { nextServer: "left" | "right"; nextTurns: number } {
   if (inDeuceMode(s)) {
-    // From deuce onward: always switch server, one serve each.
     const next = s.server === "left" ? "right" : "left";
-    return { nextServer: next, nextTurns: 1 };
+    return { nextServer: next, nextTurns: s.params.deuceServesPerTurn };
   }
 
-  // Pre-deuce: 2 serves in a row
   if (s.serviceTurnsLeft > 1) {
     return { nextServer: s.server, nextTurns: s.serviceTurnsLeft - 1 };
   }
-  // Switch and reset to 2
-  return { nextServer: s.server === "left" ? "right" : "left", nextTurns: 2 };
+  return { nextServer: s.server === "left" ? "right" : "left", nextTurns: s.params.servesPerTurn };
+}
+
+function hasWinner(s: GameState): Side | null {
+  const { left, right } = s.scores;
+  const { targetScore, winBy } = s.params;
+
+  const lead = Math.abs(left - right);
+  if (left >= targetScore || right >= targetScore) {
+    if (lead >= winBy) return left > right ? "left" : "right";
+  }
+  return null;
 }
 
 /* ----------------------------- collisions core ---------------------------- */
@@ -153,16 +159,30 @@ function maybeScoreAndFreeze(s: GameState, events: FrameEvents): GameState {
     const freezeZ = s.ball.z;
     events.explode = { x: freezeX, z: freezeZ };
 
-    const { nextServer, nextTurns } = rotateService(s);
+    const scored = { ...s, scores: { ...s.scores, left: s.scores.left + 1 } };
 
+    // NEW: check win first
+    const win = hasWinner(scored);
+    if (win) {
+      return {
+        ...scored,
+        phase: "gameOver",
+        winner: win,
+        tFreezeMs: undefined,
+        nextServe: undefined,
+        ball: { x: freezeX, z: freezeZ, vx: 0, vz: 0 },
+      };
+    }
+
+    // Otherwise: rotate service & freeze between points
+    const { nextServer, nextTurns } = rotateService(scored);
     return {
-      ...s,
+      ...scored,
       phase: "pointFreeze",
       tFreezeMs: FREEZE_DURATION_MS,
-      nextServe: nextServer, // who serves the next rally
-      server: nextServer, // persist during freeze
+      nextServe: nextServer,
+      server: nextServer,
       serviceTurnsLeft: nextTurns,
-      scores: { ...s.scores, left: s.scores.left + 1 },
       ball: { x: freezeX, z: freezeZ, vx: 0, vz: 0 },
     };
   }
@@ -173,16 +193,29 @@ function maybeScoreAndFreeze(s: GameState, events: FrameEvents): GameState {
     const freezeZ = s.ball.z;
     events.explode = { x: freezeX, z: freezeZ };
 
-    const { nextServer, nextTurns } = rotateService(s);
+    const scored = { ...s, scores: { ...s.scores, right: s.scores.right + 1 } };
 
+    // NEW: check win first
+    const win = hasWinner(scored);
+    if (win) {
+      return {
+        ...scored,
+        phase: "gameOver",
+        winner: win,
+        tFreezeMs: undefined,
+        nextServe: undefined,
+        ball: { x: freezeX, z: freezeZ, vx: 0, vz: 0 },
+      };
+    }
+
+    const { nextServer, nextTurns } = rotateService(scored);
     return {
-      ...s,
+      ...scored,
       phase: "pointFreeze",
       tFreezeMs: FREEZE_DURATION_MS,
       nextServe: nextServer,
       server: nextServer,
       serviceTurnsLeft: nextTurns,
-      scores: { ...s.scores, right: s.scores.right + 1 },
       ball: { x: freezeX, z: freezeZ, vx: 0, vz: 0 },
     };
   }
@@ -208,6 +241,10 @@ export function stepBallAndCollisions(
 ): { next: GameState; events: FrameEvents } {
   let s = { ...state };
   const events: FrameEvents = {};
+
+    if (s.phase === "gameOver") {
+      return { next: s, events };
+    }
 
   if (isServePhase(s.phase)) {
     s = { ...s, phase: "rally" };
