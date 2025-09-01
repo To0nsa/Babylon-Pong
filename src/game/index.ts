@@ -10,7 +10,7 @@ export type { InputIntent } from "./input/input";
 export { ZeroIntent } from "./input/input";
 
 // Systems — high level tick and common steps
-export { stepBallAndCollisions } from "./systems/flow/phaseManager";
+export { handleSteps } from "./systems/flow/phaseManager";
 export { stepPaddles } from "./systems/control/paddle";
 export type { FrameEvents } from "./model/types";
 

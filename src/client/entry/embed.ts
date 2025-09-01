@@ -7,7 +7,7 @@ import Logger from "../../shared/utils/Logger";
 import { createInitialState } from "../../game/model/state";
 import { bootAsRally } from "../../game";
 import { stepPaddles } from "../../game/systems/control/paddle";
-import { stepBallAndCollisions } from "../../game";
+import { handleSteps } from "../../game";
 
 import { attachLocalInput, readIntent, blockInputFor } from "../input";
 import { createBounces } from "../visuals";
@@ -102,7 +102,7 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
 
       // 2) Ball & collisions
       const prevPhase = state.phase;
-      const stepped = stepBallAndCollisions(state, dt);
+      const stepped = handleSteps(state, dt);
 
       // 3) Match controller reacts to scoring / game over / match flow
       const { state: controlled } = match.afterPhysicsStep(stepped.next);

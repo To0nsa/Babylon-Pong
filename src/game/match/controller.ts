@@ -4,22 +4,7 @@ import type { GameState } from "../model";
 import { createInitialState } from "../model";
 import type { Ruleset } from "../rules";
 import { sideOpposite } from "../rules";
-
-export type MatchSnapshot = {
-  bestOf: number;
-  currentGameIndex: number; // 1-based
-  gamesWon: { east: number; west: number };
-  matchWinner?: TableEnd;
-  endsFlippedThisGame: boolean; // did we flip ends at game start
-  midSwapDoneThisGame: boolean; // did we flip ends at 5 in deciding
-  initialServerThisGame: TableEnd; // who started this game serving
-};
-
-export type MatchEvents = {
-  swapSidesNow?: true; // trigger player-end swap (render/input can react)
-  gameOver?: { winner: TableEnd; gameIndex: number };
-  matchOver?: { winner: TableEnd };
-};
+import { PAUSE_BETWEEN_GAMES_MS, PAUSE_MATCH_OVER_MS } from "../constants";
 
 export function createMatchController(
   bounds: GameState["bounds"],
@@ -34,11 +19,7 @@ export function createMatchController(
   let midSwapDoneThisGame = false;
   let initialServerThisGame: TableEnd = initialServer;
 
-  function addRulesToState(
-    s: GameState,
-    r: Ruleset,
-    server: TableEnd,
-  ): GameState {
+  function addRulesToState(s: GameState, r: Ruleset, server: TableEnd): GameState {
     return {
       ...s,
       server,
@@ -54,7 +35,7 @@ export function createMatchController(
     };
   }
 
-  function snapshot(): MatchSnapshot {
+  function snapshot() {
     return {
       bestOf: rules.match.bestOf,
       currentGameIndex,
@@ -66,15 +47,16 @@ export function createMatchController(
     };
   }
 
-  /** Call this every frame AFTER your physics step updated `game`. */
-  function afterPhysicsStep(next: GameState): {
-    state: GameState;
-    events: MatchEvents;
-  } {
+  /** Call AFTER physics/flow step each frame. */
+  function afterPhysicsStep(next: GameState) {
     game = next;
-    const events: MatchEvents = {};
+    const events: {
+      swapSidesNow?: true;
+      gameOver?: { winner: TableEnd; gameIndex: number };
+      matchOver?: { winner: TableEnd };
+    } = {};
 
-    // In deciding game, swap ends when first hits threshold (once)
+    // Deciding-game mid swap
     const deciding = currentGameIndex === rules.match.bestOf;
     if (
       deciding &&
@@ -87,53 +69,51 @@ export function createMatchController(
       events.swapSidesNow = true;
     }
 
-    if (game.phase === "gameOver" && game.gameWinner) {
-      // Record game win
-      gamesWon[game.gameWinner]++;
-
-      events.gameOver = {
-        winner: game.gameWinner,
-        gameIndex: currentGameIndex,
-      };
-
-      const need = Math.ceil(rules.match.bestOf / 2);
-      if (gamesWon.east >= need || gamesWon.west >= need) {
-        matchWinner = gamesWon.east > gamesWon.west ? "east" : "west";
-        events.matchOver = { winner: matchWinner };
-        return { state: game, events };
-      }
-
-      // Next game setup
+    // Transition out of pauseBetweenGames when timer hits 0
+    if (game.phase === "pauseBetweenGames" && (game.tPauseBtwGamesMs ?? 1) <= 0) {
       currentGameIndex++;
       endsFlippedThisGame = false;
       midSwapDoneThisGame = false;
 
-      // Flip ends at new game start?
       if (rules.match.switchEndsEachGame) {
         endsFlippedThisGame = true;
         events.swapSidesNow = true;
       }
 
-      // Alternate initial server across games if requested
       const nextInitialServer = rules.match.alternateInitialServerEachGame
         ? sideOpposite(initialServerThisGame)
         : initialServerThisGame;
       initialServerThisGame = nextInitialServer;
 
-      // Fresh game state (points reset, serving reset) but same bounds/physics params
-      game = addRulesToState(
-        createInitialState(game.bounds),
-        rules,
-        nextInitialServer,
-      );
+      // Fresh game state
+      game = addRulesToState(createInitialState(game.bounds), rules, nextInitialServer);
+      return { state: game, events };
+    }
+
+    // Reached gameOver this frame? Record & start the proper pause.
+    if (game.phase === "gameOver" && game.gameWinner) {
+      // Record game win once (we flip phase immediately below so it won't repeat)
+      gamesWon[game.gameWinner]++;
+      events.gameOver = { winner: game.gameWinner, gameIndex: currentGameIndex };
+
+      // Match decided?
+      const need = Math.ceil(rules.match.bestOf / 2);
+      if (gamesWon.east >= need || gamesWon.west >= need) {
+        matchWinner = gamesWon.east > gamesWon.west ? "east" : "west";
+        events.matchOver = { winner: matchWinner };
+        // Enter a terminal victory pause
+        game = { ...game, phase: "matchOver", tMatchOverMs: PAUSE_MATCH_OVER_MS };
+        return { state: game, events };
+      }
+
+      // Otherwise: enter between-games pause (flow/pause.ts will tick the timer)
+      const ms = game.tPauseBtwGamesMs ?? PAUSE_BETWEEN_GAMES_MS;
+      game = { ...game, phase: "pauseBetweenGames", tPauseBtwGamesMs: ms };
+      return { state: game, events };
     }
 
     return { state: game, events };
   }
 
-  return {
-    getGame: () => game,
-    getSnapshot: snapshot,
-    afterPhysicsStep,
-  };
+  return { getGame: () => game, getSnapshot: snapshot, afterPhysicsStep };
 }

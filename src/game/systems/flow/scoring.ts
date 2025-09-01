@@ -1,24 +1,16 @@
-// src/game/ball/scoring.ts
+// src/game/systems/flow/scoring.ts
 import type { GameState } from "../../model";
 import type { FrameEvents } from "../../model";
-import { PAUSE_BETWEEN_POINTS_MS } from "../../constants";
-import { rotateService } from ".";
-import { hasGameWinner } from ".";
+import { PAUSE_BETWEEN_POINTS_MS, PAUSE_BETWEEN_GAMES_MS } from "../../constants";
+import { rotateService, hasGameWinner } from ".";
 import type { TableEnd } from "shared/types";
 
-export function maybeScoreAndFreeze(
-  s: GameState,
-  events: FrameEvents,
-): GameState {
+export function maybeScoreAndFreeze(s: GameState, events: FrameEvents): GameState {
   const goalX = s.bounds.halfLengthX + s.bounds.ballRadius;
   const x = s.ball.x;
 
-  if (x <= -goalX) {
-    return handlePointScored("east", s, events, goalX);
-  }
-  if (x >= goalX) {
-    return handlePointScored("west", s, events, goalX);
-  }
+  if (x <= -goalX) return handlePointScored("east", s, events, goalX);
+  if (x >= goalX) return handlePointScored("west", s, events, goalX);
   return s;
 }
 
@@ -28,41 +20,36 @@ function handlePointScored(
   events: FrameEvents,
   goalX: number,
 ): GameState {
-  let freezeX: number;
-  if (tableEnd === "east") {
-    freezeX = -goalX;
-  } else {
-    freezeX = goalX;
-  }
+  const freezeX = tableEnd === "east" ? -goalX : goalX;
   const freezeZ = s.ball.z;
 
-  // FX trigger
   events.explode = { x: freezeX, z: freezeZ };
 
-  let points: typeof s.points;
-  if (tableEnd === "east") {
-    points = { ...s.points, west: s.points.west + 1 };
-  } else {
-    points = { ...s.points, east: s.points.east + 1 };
-  }
+  const points =
+    tableEnd === "east"
+      ? { ...s.points, west: s.points.west + 1 }
+      : { ...s.points, east: s.points.east + 1 };
 
   const scored: GameState = {
     ...s,
     points,
+    // Freeze ball exactly at the goal for the pause
     ball: { x: freezeX, z: freezeZ, vx: 0, vz: 0 },
   };
 
   const win = hasGameWinner(scored);
   if (win) {
+    // Game won → no serve here; arm between-games pause, record winner
     return {
       ...scored,
       phase: "gameOver",
       gameWinner: win,
-      tPauseBtwPointsMs: PAUSE_BETWEEN_POINTS_MS,
+      tPauseBtwGamesMs: PAUSE_BETWEEN_GAMES_MS,
       nextServe: undefined,
     };
   }
 
+  // Normal rally end → short pause between points + next serve info
   const { nextServer, nextTurns } = rotateService(scored);
   return {
     ...scored,

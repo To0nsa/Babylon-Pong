@@ -1,24 +1,32 @@
-// src/game/systems/timing/step.ts
+// src/game/systems/flow/phaseManager.ts
 import type { GameState } from "../../model/state";
 import type { FrameEvents } from "../../model/types";
-import { isPauseBtwPoints, isRallyPhase, isServePhase } from "../utils";
+import { isRallyPhase, isServePhase } from "../utils";
 import { collideWalls, collidePaddle } from "../physics";
 import { maybeScoreAndFreeze } from "../scoring";
-import { stepPauseBtwPoints } from "./pause";
+import { stepPause } from "./pause";
 
-export function stepBallAndCollisions(
+export function handleSteps(
   state: GameState,
   dt: number,
 ): { next: GameState; events: FrameEvents } {
   let s = { ...state };
   const events: FrameEvents = {};
 
+  // Game-over is a hard stop for physics; match controller will advance flow.
   if (s.phase === "gameOver") return { next: s, events };
 
-  if (isServePhase(s.phase)) s = { ...s, phase: "rally" };
+  // All pauses are handled here, deterministically.
+  if (
+    s.phase === "pauseBtwPoints" ||
+    s.phase === "pauseBetweenGames" ||
+    s.phase === "matchOver"
+  ) {
+    return { next: stepPause(s, dt), events };
+  }
 
-  if (isPauseBtwPoints(s.phase))
-    return { next: stepPauseBtwPoints(s, dt), events };
+  // Serve phases simply gate the rally step (your existing behavior).
+  if (isServePhase(s.phase)) s = { ...s, phase: "rally" };
 
   if (isRallyPhase(s.phase)) {
     const w = collideWalls(s, dt);
@@ -28,7 +36,7 @@ export function stepBallAndCollisions(
     s = collidePaddle(s, dt);
     s = { ...s, ball: { ...s.ball, x: s.ball.x + s.ball.vx * dt } };
 
-    // If crossed a goal, enter pause between points & emit explosion
+    // Check for goal → freeze ball & enter pause (no serve logic here)
     s = maybeScoreAndFreeze(s, events);
   }
 

@@ -60,6 +60,9 @@ export type GameState = {
   /** Remaining ms for the pause between games. */
   tPauseBtwGamesMs?: number;
 
+  /** Remaining ms for the pause at match end. */
+  tMatchOverMs?: number;
+
   /** Winners at game/match boundaries. */
   gameWinner?: TableEnd;
   matchWinner?: TableEnd;
