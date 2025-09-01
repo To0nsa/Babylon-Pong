@@ -7,7 +7,7 @@ import Logger from "../../shared/utils/Logger";
 import { createInitialState } from "../../game/state";
 import { bootAsRally } from "../../game/boot";
 import { stepPaddles } from "../../game/systems/paddle";
-import { stepBallAndCollisions } from "../../game/systems/ball";
+import { stepBallAndCollisions } from "../../game/systems";
 
 import { attachLocalInput, readIntent, blockInputFor } from "../input";
 import { createBounces } from "../visuals";
