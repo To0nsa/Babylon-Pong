@@ -22,6 +22,7 @@ export function tableTennisRules(overrides?: Partial<Ruleset>): Ruleset {
     game: { ...base.game, ...(overrides?.game ?? {}) },
     match: { ...base.match, ...(overrides?.match ?? {}) },
   };
-  if (merged.game.deuceAt == null) merged.game.deuceAt = merged.game.targetScore - 1;
+  if (merged.game.deuceAt == null)
+    merged.game.deuceAt = merged.game.targetScore - 1;
   return merged;
 }

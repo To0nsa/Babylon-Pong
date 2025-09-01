@@ -9,13 +9,13 @@ export type MatchSnapshot = {
   currentGameIndex: number; // 1-based
   gamesWon: { left: number; right: number };
   matchWinner?: Side;
-  endsFlippedThisGame: boolean;        // did we flip ends at game start
-  midSwapDoneThisGame: boolean;        // did we flip ends at 5 in deciding
-  initialServerThisGame: Side;         // who started this game serving
+  endsFlippedThisGame: boolean; // did we flip ends at game start
+  midSwapDoneThisGame: boolean; // did we flip ends at 5 in deciding
+  initialServerThisGame: Side; // who started this game serving
 };
 
 export type MatchEvents = {
-  swapSidesNow?: true;                 // trigger player-end swap (render/input can react)
+  swapSidesNow?: true; // trigger player-end swap (render/input can react)
   gameOver?: { winner: Side; gameIndex: number };
   matchOver?: { winner: Side };
 };
@@ -62,7 +62,10 @@ export function createMatchController(
   }
 
   /** Call this every frame AFTER your physics step updated `game`. */
-  function afterPhysicsStep(next: GameState): { state: GameState; events: MatchEvents } {
+  function afterPhysicsStep(next: GameState): {
+    state: GameState;
+    events: MatchEvents;
+  } {
     game = next;
     const events: MatchEvents = {};
 
@@ -110,7 +113,11 @@ export function createMatchController(
       initialServerThisGame = nextInitialServer;
 
       // Fresh game state (scores reset, serving reset) but same bounds/physics params
-      game = addRulesToState(createInitialState(game.bounds), rules, nextInitialServer);
+      game = addRulesToState(
+        createInitialState(game.bounds),
+        rules,
+        nextInitialServer,
+      );
     }
 
     return { state: game, events };

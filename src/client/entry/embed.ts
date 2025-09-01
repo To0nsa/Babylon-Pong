@@ -80,7 +80,11 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
       alternateInitialServerEachGame: true,
     },
   });
-  const match = createMatchController(bounds, RULES, /* initial server */ "left");
+  const match = createMatchController(
+    bounds,
+    RULES,
+    /* initial server */ "left",
+  );
 
   // Input
   const detachInput = attachLocalInput(canvas);
@@ -102,18 +106,28 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
       const stepped = stepBallAndCollisions(state, dt);
 
       // 3) Match controller reacts to scoring / game over / match flow
-      const { state: controlled, events: matchEv } = match.afterPhysicsStep(stepped.next);
+      const { state: controlled, events: matchEv } = match.afterPhysicsStep(
+        stepped.next,
+      );
       state = controlled;
 
       if (matchEv.swapSidesNow) Logger.info("MATCH", "swapSidesNow");
-      if (matchEv.gameOver) Logger.info("MATCH", `Game ${matchEv.gameOver.gameIndex} won by ${matchEv.gameOver.winner}`);
-      if (matchEv.matchOver) Logger.info("MATCH", `Match won by ${matchEv.matchOver.winner}`);
+      if (matchEv.gameOver)
+        Logger.info(
+          "MATCH",
+          `Game ${matchEv.gameOver.gameIndex} won by ${matchEv.gameOver.winner}`,
+        );
+      if (matchEv.matchOver)
+        Logger.info("MATCH", `Match won by ${matchEv.matchOver.winner}`);
 
       // Handle match-level events
       if (matchEv.swapSidesNow) {
         // TODO: If you bind players to sides, flip names/controls here.
         // For now, just log; visuals are symmetric.
-        Logger.info("MATCH", "swapSidesNow (new game or deciding-game mid-swap)");
+        Logger.info(
+          "MATCH",
+          "swapSidesNow (new game or deciding-game mid-swap)",
+        );
       }
       if (matchEv.gameOver) {
         Logger.info(

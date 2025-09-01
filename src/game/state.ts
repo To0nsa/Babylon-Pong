@@ -10,7 +10,12 @@ export type Ball = {
   vz: number;
 };
 
-export type Phase = "serveLeft" | "serveRight" | "rally" | "pointFreeze" | "gameOver";
+export type Phase =
+  | "serveLeft"
+  | "serveRight"
+  | "rally"
+  | "pointFreeze"
+  | "gameOver";
 
 export type GameState = {
   paddles: { left: Paddle; right: Paddle };
@@ -42,16 +47,16 @@ export type GameState = {
 
   params: {
     /** Gameplay/physics knobs */
-    paddleSpeed: number;      // m/s
-    ballSpeed: number;        // base rally speed (m/s)
-    zEnglish: number;         // how much paddle vz affects ball.vz (0..1+)
+    paddleSpeed: number; // m/s
+    ballSpeed: number; // base rally speed (m/s)
+    zEnglish: number; // how much paddle vz affects ball.vz (0..1+)
     restitutionWall: number;
 
     /** Scoring/service rules (table-tennis style by default) */
-    targetScore: number;         // e.g. 11
-    winBy: number;               // e.g. 2
-    servesPerTurn: number;       // e.g. 2 (pre-deuce)
-    deuceServesPerTurn: number;  // e.g. 1 (at deuce)
+    targetScore: number; // e.g. 11
+    winBy: number; // e.g. 2
+    servesPerTurn: number; // e.g. 2 (pre-deuce)
+    deuceServesPerTurn: number; // e.g. 1 (at deuce)
     /** Deuce threshold; default is targetScore - 1. */
     deuceAt: number;
   };

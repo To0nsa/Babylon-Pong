@@ -53,7 +53,10 @@ function serveFrom(side: "left" | "right", s: GameState): GameState {
  * - Before deuce: 2 serves each (e.g., L,L,R,R, …)
  * - From 10–10 onward: alternate every point (L,R,L,R, …)
  */
-function rotateService(s: GameState): { nextServer: "left" | "right"; nextTurns: number } {
+function rotateService(s: GameState): {
+  nextServer: "left" | "right";
+  nextTurns: number;
+} {
   if (inDeuceMode(s)) {
     const next = s.server === "left" ? "right" : "left";
     return { nextServer: next, nextTurns: s.params.deuceServesPerTurn };
@@ -62,7 +65,10 @@ function rotateService(s: GameState): { nextServer: "left" | "right"; nextTurns:
   if (s.serviceTurnsLeft > 1) {
     return { nextServer: s.server, nextTurns: s.serviceTurnsLeft - 1 };
   }
-  return { nextServer: s.server === "left" ? "right" : "left", nextTurns: s.params.servesPerTurn };
+  return {
+    nextServer: s.server === "left" ? "right" : "left",
+    nextTurns: s.params.servesPerTurn,
+  };
 }
 
 function hasWinner(s: GameState): Side | null {
@@ -242,9 +248,9 @@ export function stepBallAndCollisions(
   let s = { ...state };
   const events: FrameEvents = {};
 
-    if (s.phase === "gameOver") {
-      return { next: s, events };
-    }
+  if (s.phase === "gameOver") {
+    return { next: s, events };
+  }
 
   if (isServePhase(s.phase)) {
     s = { ...s, phase: "rally" };
