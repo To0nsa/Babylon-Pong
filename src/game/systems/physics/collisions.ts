@@ -38,23 +38,36 @@ export function collidePaddle(s: GameState, dt: number): GameState {
 
   const halfDepth = bounds.paddleHalfDepthZ + bounds.ballRadius / 2;
   const sides = [
-    { plane: bounds.leftPaddleX + bounds.ballRadius,  pz: paddles.P1.z, pvz: paddles.P1.vz },
-    { plane: bounds.rightPaddleX - bounds.ballRadius, pz: paddles.P2.z, pvz: paddles.P2.vz },
+    {
+      plane: bounds.leftPaddleX + bounds.ballRadius,
+      pz: paddles.P1.z,
+      pvz: paddles.P1.vz,
+    },
+    {
+      plane: bounds.rightPaddleX - bounds.ballRadius,
+      pz: paddles.P2.z,
+      pvz: paddles.P2.vz,
+    },
   ] as const;
 
   for (const { plane, pz, pvz } of sides) {
     const denom = nextX - x;
-    if (Math.abs(denom) < 1e-9) continue;              // no horizontal travel
-    if ((plane - x) * denom <= 0) continue;            // not moving toward this plane
+    if (Math.abs(denom) < 1e-9) continue; // no horizontal travel
+    if ((plane - x) * denom <= 0) continue; // not moving toward this plane
 
-    const t = (plane - x) / denom;                      // fraction of dt
-    if (t < 0 || t > 1) continue;                       // no hit within this step
-    if (Math.abs(z - pz) > halfDepth) continue;         // outside paddle depth
+    const t = (plane - x) / denom; // fraction of dt
+    if (t < 0 || t > 1) continue; // no hit within this step
+    if (Math.abs(z - pz) > halfDepth) continue; // outside paddle depth
 
     const zHit = z + vz * dt * t;
     return {
       ...s,
-      ball: { x: plane, z: clampZ(s, zHit), vx: -vx, vz: vz + pvz * params.zEnglish },
+      ball: {
+        x: plane,
+        z: clampZ(s, zHit),
+        vx: -vx,
+        vz: vz + pvz * params.zEnglish,
+      },
     };
   }
 
