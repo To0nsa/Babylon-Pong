@@ -26,7 +26,7 @@ export function maybeScoreAndFreeze(
         ...scored,
         phase: "gameOver",
         gameWinner: win,
-        tFreezeMs: undefined,
+        tPauseBtwPointsMs: undefined,
         nextServe: undefined,
         ball: { x: freezeX, z: freezeZ, vx: 0, vz: 0 },
       };
@@ -35,8 +35,8 @@ export function maybeScoreAndFreeze(
     const { nextServer, nextTurns } = rotateService(scored);
     return {
       ...scored,
-      phase: "pointFreeze",
-      tFreezeMs: FREEZE_DURATION_MS,
+      phase: "pauseBtwPoints",
+      tPauseBtwPointsMs: FREEZE_DURATION_MS,
       nextServe: nextServer,
       server: nextServer,
       serviceTurnsLeft: nextTurns,
@@ -58,7 +58,7 @@ export function maybeScoreAndFreeze(
         ...scored,
         phase: "gameOver",
         gameWinner: win,
-        tFreezeMs: undefined,
+        tPauseBtwPointsMs: undefined,
         nextServe: undefined,
         ball: { x: freezeX, z: freezeZ, vx: 0, vz: 0 },
       };
@@ -67,8 +67,8 @@ export function maybeScoreAndFreeze(
     const { nextServer, nextTurns } = rotateService(scored);
     return {
       ...scored,
-      phase: "pointFreeze",
-      tFreezeMs: FREEZE_DURATION_MS,
+      phase: "pauseBtwPoints",
+      tPauseBtwPointsMs: FREEZE_DURATION_MS,
       nextServe: nextServer,
       server: nextServer,
       serviceTurnsLeft: nextTurns,

@@ -7,9 +7,9 @@ export function clampZ(s: GameState, z: number): number {
 }
 
 export function isServePhase(p: GameState["phase"]): boolean {
-  return p === "serveLeft" || p === "serveRight";
+  return p === "serveEast" || p === "serveWest";
 }
 
-export function isFreezePhase(p: GameState["phase"]): p is "pointFreeze" {
-  return p === "pointFreeze";
+export function isFreezePhase(p: GameState["phase"]): p is "pauseBtwPoints" {
+  return p === "pauseBtwPoints";
 }

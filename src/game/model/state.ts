@@ -17,7 +17,7 @@ export type Ball = {
  * High-level flow:
  * - serveLeft / serveRight: awaiting serve toss/hit
  * - rally: ball in play
- * - pointFreeze: short pause after a point
+ * - pauseBtwPoints: short pause after a point
  * - gameOver: current game concluded (someone reached targetScore, winBy)
  * - matchOver: match concluded (someone reached targetGames)
  */
@@ -25,8 +25,9 @@ export type Phase =
   | "serveEast"
   | "serveWest"
   | "rally"
-  | "pointFreeze"
+  | "pauseBtwPoints"
   | "gameOver"
+  | "pauseBetweenGames"
   | "matchOver";
 
 /**
@@ -46,15 +47,18 @@ export type GameState = {
 
   phase: Phase;
 
-  /** Remaining ms for the freeze between rallies. */
-  tFreezeMs?: number;
+  /** Remaining ms for the pause between rallies. */
+  tPauseBtwPointsMs?: number;
 
-  /** Which side will serve next after freeze. */
+  /** Which side will serve next after pause between points. */
   nextServe?: TableEnd;
 
   /** Current server and remaining serves in the current turn (block). */
   server: TableEnd;
   serviceTurnsLeft: number;
+
+  /** Remaining ms for the pause between games. */
+  tPauseBtwGamesMs?: number;
 
   /** Winners at game/match boundaries. */
   gameWinner?: TableEnd;
@@ -113,12 +117,14 @@ export function createInitialState(bounds: GameState["bounds"]): GameState {
 
     // Boot with east serving first (and 2 serves in this block)
     phase: "serveEast",
-    tFreezeMs: undefined,
+    tPauseBtwPointsMs: undefined,
     nextServe: undefined,
     server: "east",
     serviceTurnsLeft: servesPerTurn,
 
+    tPauseBtwGamesMs: undefined,
     gameWinner: undefined,
+    
     matchWinner: undefined,
 
     bounds,
