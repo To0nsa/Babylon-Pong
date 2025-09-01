@@ -20,7 +20,11 @@ export function createMatchController(
   let midSwapDoneThisGame = true;
   let initialServerThisGame: TableEnd = initialServer;
 
-  function addRulesToState(s: GameState, r: Ruleset, server: TableEnd): GameState {
+  function addRulesToState(
+    s: GameState,
+    r: Ruleset,
+    server: TableEnd,
+  ): GameState {
     return {
       ...s,
       server,
@@ -70,12 +74,18 @@ export function createMatchController(
       events.swapSidesNow = true;
     }
 
-    if (game.phase === "pauseBetweenGames" && game.tPauseBtwGamesMs === undefined) {
+    if (
+      game.phase === "pauseBetweenGames" &&
+      game.tPauseBtwGamesMs === undefined
+    ) {
       game = { ...game, tPauseBtwGamesMs: PAUSE_BETWEEN_GAMES_MS };
     }
 
     // Transition out of pauseBetweenGames when timer hits 0
-    if (game.phase === "pauseBetweenGames" && (game.tPauseBtwGamesMs ?? 0) <= 0) {
+    if (
+      game.phase === "pauseBetweenGames" &&
+      (game.tPauseBtwGamesMs ?? 0) <= 0
+    ) {
       currentGameIndex++;
       endsFlippedThisGame = false;
       midSwapDoneThisGame = false;
@@ -91,7 +101,11 @@ export function createMatchController(
       initialServerThisGame = nextInitialServer;
 
       // Fresh game state + immediately arm the opening serve so the ball has velocity
-      const fresh = addRulesToState(createInitialState(game.bounds), rules, nextInitialServer);
+      const fresh = addRulesToState(
+        createInitialState(game.bounds),
+        rules,
+        nextInitialServer,
+      );
       game = serveFrom(nextInitialServer, fresh);
 
       return { state: game, events };
@@ -101,7 +115,10 @@ export function createMatchController(
     if (game.phase === "gameOver" && game.gameWinner) {
       // Record game win once (we flip phase immediately below so it won't repeat)
       gamesWon[game.gameWinner]++;
-      events.gameOver = { winner: game.gameWinner, gameIndex: currentGameIndex };
+      events.gameOver = {
+        winner: game.gameWinner,
+        gameIndex: currentGameIndex,
+      };
 
       // Match decided?
       const need = Math.ceil(rules.match.bestOf / 2);
@@ -109,7 +126,11 @@ export function createMatchController(
         matchWinner = gamesWon.east > gamesWon.west ? "east" : "west";
         events.matchOver = { winner: matchWinner };
         // Enter a terminal victory pause
-        game = { ...game, phase: "matchOver", tMatchOverMs: PAUSE_MATCH_OVER_MS };
+        game = {
+          ...game,
+          phase: "matchOver",
+          tMatchOverMs: PAUSE_MATCH_OVER_MS,
+        };
         return { state: game, events };
       }
 
