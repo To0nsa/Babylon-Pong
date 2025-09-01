@@ -48,7 +48,7 @@ export type GameState = {
   phase: Phase;
 
   /** Remaining ms for the pause between rallies. */
-  tPauseBtwPointsMs: number;
+  tPauseBtwPointsMs?: number;
 
   /** Which side will serve next after pause between points. */
   nextServe?: TableEnd;

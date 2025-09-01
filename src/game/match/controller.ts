@@ -4,6 +4,7 @@ import type { GameState } from "../model";
 import { createInitialState } from "../model";
 import type { Ruleset } from "../rules";
 import { sideOpposite } from "../rules";
+import { serveFrom } from "../systems/flow";
 import { PAUSE_BETWEEN_GAMES_MS, PAUSE_MATCH_OVER_MS } from "../constants";
 
 export function createMatchController(
@@ -15,8 +16,8 @@ export function createMatchController(
   let currentGameIndex = 1;
   let gamesWon = { east: 0, west: 0 };
   let matchWinner: TableEnd | undefined;
-  let endsFlippedThisGame = false;
-  let midSwapDoneThisGame = false;
+  let endsFlippedThisGame = true;
+  let midSwapDoneThisGame = true;
   let initialServerThisGame: TableEnd = initialServer;
 
   function addRulesToState(s: GameState, r: Ruleset, server: TableEnd): GameState {
@@ -69,8 +70,12 @@ export function createMatchController(
       events.swapSidesNow = true;
     }
 
+    if (game.phase === "pauseBetweenGames" && game.tPauseBtwGamesMs === undefined) {
+      game = { ...game, tPauseBtwGamesMs: PAUSE_BETWEEN_GAMES_MS };
+    }
+
     // Transition out of pauseBetweenGames when timer hits 0
-    if (game.phase === "pauseBetweenGames" && (game.tPauseBtwGamesMs ?? 1) <= 0) {
+    if (game.phase === "pauseBetweenGames" && (game.tPauseBtwGamesMs ?? 0) <= 0) {
       currentGameIndex++;
       endsFlippedThisGame = false;
       midSwapDoneThisGame = false;
@@ -85,8 +90,10 @@ export function createMatchController(
         : initialServerThisGame;
       initialServerThisGame = nextInitialServer;
 
-      // Fresh game state
-      game = addRulesToState(createInitialState(game.bounds), rules, nextInitialServer);
+      // Fresh game state + immediately arm the opening serve so the ball has velocity
+      const fresh = addRulesToState(createInitialState(game.bounds), rules, nextInitialServer);
+      game = serveFrom(nextInitialServer, fresh);
+
       return { state: game, events };
     }
 

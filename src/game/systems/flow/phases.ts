@@ -3,7 +3,7 @@ import type { GameState } from "../../model/state";
 import type { FrameEvents } from "../../model/types";
 import { isRallyPhase, isServePhase } from "../utils";
 import { collideWalls, collidePaddle } from "../physics";
-import { maybeScoreAndFreeze } from "../scoring";
+import { maybeScoreAndFreeze } from "./scoring";
 import { stepPause } from "./pause";
 
 export function handleSteps(

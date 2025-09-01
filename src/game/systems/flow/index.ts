@@ -2,4 +2,4 @@
 export * from "./service";
 export * from "./win";
 export * from "./pause";
-export * from "./phaseManager";
+export * from "./phases";
