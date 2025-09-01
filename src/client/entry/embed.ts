@@ -9,7 +9,12 @@ import { bootAsRally } from "../../game";
 import { stepPaddles } from "../../game/systems/control/paddle";
 import { handleSteps } from "../../game";
 
-import { attachLocalInput, readIntent, blockInputFor, toggleControlsMirrored } from "../input";
+import {
+  attachLocalInput,
+  readIntent,
+  blockInputFor,
+  toggleControlsMirrored,
+} from "../input";
 import { createBounces } from "../visuals";
 
 import { FXManager } from "../FX/manager";
@@ -24,7 +29,6 @@ import { detectEnteredServe, onEnteredServe } from "./serveCue";
 import { updateHUD } from "../ui/hudBinding";
 import { applyFrameEvents } from "./eventsToFX";
 
-// NEW: rules + match controller
 import { tableTennisRules } from "../../game/rules/presets";
 import { createMatchController } from "../../game/match/controller";
 
@@ -44,6 +48,8 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
 
   const hud = createScoreboard();
   hud.attachToCanvas(canvas);
+  let names = { east: "Player 1", west: "Player 2" };
+  let hudMirrored = false;
 
   // Bounds once (render → headless)
   const { bounds, zMax } = computeBounds(world);
@@ -70,7 +76,7 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
   // Headless state (start in rally for a quick preview; you can switch to pure serve boot)
   let state = bootAsRally(createInitialState(bounds));
 
-  // NEW: ruleset + match controller (best-of-5 by default)
+  // ruleset + match controller (best-of-5 by default)
   const RULES = tableTennisRules({
     match: {
       bestOf: 5,
@@ -97,49 +103,59 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
     update: (dtMs) => {
       const dt = Math.min(0.05, dtMs / 1000);
 
-    // 1) Input → paddles
-    state = stepPaddles(state, readIntent(), dt);
+      // 1) Input → paddles
+      state = stepPaddles(state, readIntent(), dt);
 
-    // 2) Rally 
-    const prevPhase = state.phase;
-    const stepped = handleSteps(state, dt);
+      // 2) Rally
+      const prevPhase = state.phase;
+      const stepped = handleSteps(state, dt);
 
-    // 3) Match controller reacts to scoring / game over / match flow
-    const mc = match.afterPhysicsStep(stepped.next);
-    state = mc.state;
+      // 3) Match controller reacts to scoring / game over / match flow
+      const mc = match.afterPhysicsStep(stepped.next);
+      state = mc.state;
 
-    // react to side swaps from the controller
-    if (mc.events.swapSidesNow) {
-      toggleControlsMirrored();
+      if (mc.events.swapSidesNow) {
+        // controls follow player
+        toggleControlsMirrored();
 
-      {
-        const tmp = left.mesh.material;
-        left.mesh.material = right.mesh.material;
-        right.mesh.material = tmp;
+        // color/skin follows player
+        {
+          const m = left.mesh.material;
+          left.mesh.material = right.mesh.material;
+          right.mesh.material = m;
+        }
+
+        // HUD mapping (points + server highlight) follows player
+        hudMirrored = !hudMirrored; // NEW
+
+        // nice cross-over cue
+        paddleAnim.cue(180);
       }
-      
-      paddleAnim.cue(180);
-    }
 
-    // 4) Entered serve? Trigger cues (compare with final phase after controller)
-    const entered = detectEnteredServe(prevPhase, state.phase);
-    if (entered) {
-      onEnteredServe(entered, { ballMesh: ball.mesh, Bounces, paddleAnim, blockInputFor });
-    }
+      // 4) Entered serve? Trigger cues (compare with final phase after controller)
+      const entered = detectEnteredServe(prevPhase, state.phase);
+      if (entered) {
+        onEnteredServe(entered, {
+          ballMesh: ball.mesh,
+          Bounces,
+          paddleAnim,
+          blockInputFor,
+        });
+      }
 
-    // 5) HUD
-    updateHUD(hud, state);
+      // 5) HUD
+      updateHUD(hud, state, { mirrored: hudMirrored, names });
 
-    // 6) Visual bounce Y + project meshes
-    const ballY = Bounces.update(state.ball.x, state.ball.vx);
-    ball.mesh.position.set(state.ball.x, ballY, state.ball.z);
-    if (!paddleAnim.isAnimating()) {
-      left.mesh.position.z = state.paddles.P1.z;
-      right.mesh.position.z = state.paddles.P2.z;
-    }
+      // 6) Visual bounce Y + project meshes
+      const ballY = Bounces.update(state.ball.x, state.ball.vx);
+      ball.mesh.position.set(state.ball.x, ballY, state.ball.z);
+      if (!paddleAnim.isAnimating()) {
+        left.mesh.position.z = state.paddles.P1.z;
+        right.mesh.position.z = state.paddles.P2.z;
+      }
 
-    // 7) FX from events
-    applyFrameEvents(fx, stepped.events, ballY);
+      // 7) FX from events
+      applyFrameEvents(fx, stepped.events, ballY);
     },
   });
 

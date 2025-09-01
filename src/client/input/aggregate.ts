@@ -10,14 +10,21 @@ export { blockInputFor, isInputBlocked };
 export type Detach = () => void;
 
 let controlsMirrored = false;
-export function setControlsMirrored(v: boolean) { controlsMirrored = v; }
-export function toggleControlsMirrored() { controlsMirrored = !controlsMirrored; }
+export function setControlsMirrored(v: boolean) {
+  controlsMirrored = v;
+}
+export function toggleControlsMirrored() {
+  controlsMirrored = !controlsMirrored;
+}
 
 /** Public entry: attach both keyboard + touch. */
 export function attachLocalInput(el: HTMLElement): Detach {
   const dk = attachKeyboard(el);
   const dt = attachTouchZones(el);
-  return () => { dk(); dt(); };
+  return () => {
+    dk();
+    dt();
+  };
 }
 
 /** Merge touch + keyboard into your headless InputIntent. */
@@ -27,7 +34,7 @@ export function readIntent(): InputIntent {
   const { leftAxisTouch, rightAxisTouch } = readTouchAxes();
   const { leftAxisKey, rightAxisKey } = readKeyboardAxes();
 
-  const leftAxis  = leftAxisTouch  !== 0 ? leftAxisTouch  : leftAxisKey;
+  const leftAxis = leftAxisTouch !== 0 ? leftAxisTouch : leftAxisKey;
   const rightAxis = rightAxisTouch !== 0 ? rightAxisTouch : rightAxisKey;
 
   // When sides are swapped, swap which paddle each player controls.

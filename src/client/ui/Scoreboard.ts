@@ -1,5 +1,5 @@
 // src/client/ui/Scoreboard.ts
-export type ServerSide = "east" | "west";
+export type ServerSide = "left" | "right";
 
 export type DomScoreboardAPI = {
   setPoints: (left: number, right: number) => void;
@@ -191,7 +191,7 @@ export function createScoreboard(): DomScoreboardAPI {
   const setServer = (side: ServerSide) => {
     leftWrap.classList.remove(...ringClasses);
     rightWrap.classList.remove(...ringClasses);
-    (side === "east" ? leftWrap : rightWrap).classList.add(...ringClasses);
+    (side === "left" ? leftWrap : rightWrap).classList.add(...ringClasses);
   };
 
   const setDeuce = (flag: boolean) => {
