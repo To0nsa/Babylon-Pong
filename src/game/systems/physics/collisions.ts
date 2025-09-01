@@ -32,41 +32,30 @@ export function collideWalls(
 }
 
 export function collidePaddle(s: GameState, dt: number): GameState {
-  let { x, z, vx, vz } = s.ball;
+  const { ball, paddles, bounds, params } = s;
+  const { x, z, vx, vz } = ball;
   const nextX = x + vx * dt;
 
-  // Left paddle
-  if (vx < 0) {
-    const plane = s.bounds.leftPaddleX + s.bounds.ballRadius;
-    const crosses = x >= plane && nextX <= plane;
-    const withinZ =
-      Math.abs(z - s.paddles.P1.z) <=
-      s.bounds.paddleHalfDepthZ + s.bounds.ballRadius / 2;
-    if (crosses && withinZ) {
-      const t = (x - plane) / (x - nextX || 1e-6);
-      z = z + vz * dt * t;
-      x = plane;
-      vx = -vx;
-      vz = vz + s.paddles.P1.vz * s.params.zEnglish;
-      return { ...s, ball: { x, z: clampZ(s, z), vx, vz } };
-    }
-  }
+  const halfDepth = bounds.paddleHalfDepthZ + bounds.ballRadius / 2;
+  const sides = [
+    { plane: bounds.leftPaddleX + bounds.ballRadius,  pz: paddles.P1.z, pvz: paddles.P1.vz },
+    { plane: bounds.rightPaddleX - bounds.ballRadius, pz: paddles.P2.z, pvz: paddles.P2.vz },
+  ] as const;
 
-  // Right paddle
-  if (vx > 0) {
-    const plane = s.bounds.rightPaddleX - s.bounds.ballRadius;
-    const crosses = x <= plane && nextX >= plane;
-    const withinZ =
-      Math.abs(z - s.paddles.P2.z) <=
-      s.bounds.paddleHalfDepthZ + s.bounds.ballRadius / 2;
-    if (crosses && withinZ) {
-      const t = (plane - x) / (nextX - x || 1e-6);
-      z = z + vz * dt * t;
-      x = plane;
-      vx = -vx;
-      vz = vz + s.paddles.P2.vz * s.params.zEnglish;
-      return { ...s, ball: { x, z: clampZ(s, z), vx, vz } };
-    }
+  for (const { plane, pz, pvz } of sides) {
+    const denom = nextX - x;
+    if (Math.abs(denom) < 1e-9) continue;              // no horizontal travel
+    if ((plane - x) * denom <= 0) continue;            // not moving toward this plane
+
+    const t = (plane - x) / denom;                      // fraction of dt
+    if (t < 0 || t > 1) continue;                       // no hit within this step
+    if (Math.abs(z - pz) > halfDepth) continue;         // outside paddle depth
+
+    const zHit = z + vz * dt * t;
+    return {
+      ...s,
+      ball: { x: plane, z: clampZ(s, zHit), vx: -vx, vz: vz + pvz * params.zEnglish },
+    };
   }
 
   return s;

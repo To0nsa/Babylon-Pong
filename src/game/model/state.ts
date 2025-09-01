@@ -1,5 +1,5 @@
 // src/game/state.ts
-
+import { PAUSE_BETWEEN_POINTS_MS } from "game/constants";
 import type { TableEnd } from "../../shared/types";
 
 /** Paddle state along Z (depth). */
@@ -48,7 +48,7 @@ export type GameState = {
   phase: Phase;
 
   /** Remaining ms for the pause between rallies. */
-  tPauseBtwPointsMs?: number;
+  tPauseBtwPointsMs: number;
 
   /** Which side will serve next after pause between points. */
   nextServe?: TableEnd;
@@ -116,7 +116,7 @@ export function createInitialState(bounds: GameState["bounds"]): GameState {
 
     // Boot with east serving first (and 2 serves in this block)
     phase: "serveEast",
-    tPauseBtwPointsMs: undefined,
+    tPauseBtwPointsMs: PAUSE_BETWEEN_POINTS_MS,
     nextServe: undefined,
     server: "east",
     serviceTurnsLeft: servesPerTurn,
@@ -129,8 +129,8 @@ export function createInitialState(bounds: GameState["bounds"]): GameState {
     bounds,
     params: {
       // physics/gameplay
-      paddleSpeed: 2.4,
-      ballSpeed: 2.0,
+      paddleSpeed: 2.2,
+      ballSpeed: 2.2,
       zEnglish: 0.75,
       restitutionWall: 1.0,
 

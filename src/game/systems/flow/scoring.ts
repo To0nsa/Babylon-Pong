@@ -1,9 +1,9 @@
 // src/game/ball/scoring.ts
 import type { GameState } from "../../model";
 import type { FrameEvents } from "../../model";
-import { FREEZE_DURATION_MS } from "../../constants";
-import { rotateService } from "../flow";
-import { hasGameWinner } from "../flow";
+import { PAUSE_BETWEEN_POINTS_MS } from "../../constants";
+import { rotateService } from ".";
+import { hasGameWinner } from ".";
 import type { TableEnd } from "shared/types";
 
 export function maybeScoreAndFreeze(
@@ -14,15 +14,15 @@ export function maybeScoreAndFreeze(
   const x = s.ball.x;
 
   if (x <= -goalX) {
-    return handleGoalCross("east", s, events, goalX);
+    return handlePointScored("east", s, events, goalX);
   }
   if (x >= goalX) {
-    return handleGoalCross("west", s, events, goalX);
+    return handlePointScored("west", s, events, goalX);
   }
   return s;
 }
 
-function handleGoalCross(
+function handlePointScored(
   tableEnd: TableEnd,
   s: GameState,
   events: FrameEvents,
@@ -58,7 +58,7 @@ function handleGoalCross(
       ...scored,
       phase: "gameOver",
       gameWinner: win,
-      tPauseBtwPointsMs: undefined,
+      tPauseBtwPointsMs: PAUSE_BETWEEN_POINTS_MS,
       nextServe: undefined,
     };
   }
@@ -67,7 +67,7 @@ function handleGoalCross(
   return {
     ...scored,
     phase: "pauseBtwPoints",
-    tPauseBtwPointsMs: FREEZE_DURATION_MS,
+    tPauseBtwPointsMs: PAUSE_BETWEEN_POINTS_MS,
     nextServe: nextServer,
     server: nextServer,
     serviceTurnsLeft: nextTurns,
