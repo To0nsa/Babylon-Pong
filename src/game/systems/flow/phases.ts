@@ -1,5 +1,5 @@
 // src/game/ball/phases.ts
-import type { GameState } from "../state";
+import type { GameState } from "../../model";
 
 export function serveFrom(side: "left" | "right", s: GameState): GameState {
   const dir = side === "left" ? 1 : -1;

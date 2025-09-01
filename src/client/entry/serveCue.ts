@@ -1,4 +1,4 @@
-import type { Phase } from "../../game/state";
+import type { Phase } from "../../game/model/state";
 import { decHide } from "../FX";
 import type { ReturnTypeCreateBounces } from "./types"; // see note below
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";

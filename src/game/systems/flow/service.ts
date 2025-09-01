@@ -1,5 +1,5 @@
 // src/game/ball/service.ts
-import type { GameState, Side } from "../state";
+import type { GameState, Side } from "../../model";
 
 export function inDeuceMode(s: GameState): boolean {
   const deuceAt = s.params.deuceAt ?? s.params.targetScore - 1;

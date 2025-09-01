@@ -1,4 +1,4 @@
-// “Intent” from any source (keyboard, AI, network…)
+// src/game/input/input.ts
 export type InputIntent = {
   leftAxis: number; // -1..1 (down/up on Z)
   rightAxis: number; // -1..1

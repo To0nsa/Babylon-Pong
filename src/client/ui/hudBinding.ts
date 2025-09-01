@@ -1,4 +1,4 @@
-import type { GameState } from "../../game/state";
+import type { GameState } from "../../game/model/state";
 import type { DomScoreboardAPI } from "../ui/Scoreboard";
 
 export function updateHUD(hud: DomScoreboardAPI, s: GameState) {

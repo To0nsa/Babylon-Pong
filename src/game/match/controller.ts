@@ -1,8 +1,8 @@
 // src/game/match/controller.ts
-import type { GameState, Side } from "../state";
-import { createInitialState } from "../state";
-import type { Ruleset } from "../rules/types";
-import { sideOpposite } from "../rules/types";
+import type { GameState, Side } from "../model";
+import { createInitialState } from "../model";
+import type { Ruleset } from "../rules";
+import { sideOpposite } from "../rules";
 
 export type MatchSnapshot = {
   bestOf: number;

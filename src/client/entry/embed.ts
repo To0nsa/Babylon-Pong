@@ -4,9 +4,9 @@ import { createWorld } from "../scene";
 import type { PongInstance } from "./types";
 import Logger from "../../shared/utils/Logger";
 
-import { createInitialState } from "../../game/state";
+import { createInitialState } from "../../game/model/state";
 import { bootAsRally } from "../../game/boot";
-import { stepPaddles } from "../../game/systems/paddle";
+import { stepPaddles } from "../../game/systems/control/paddle";
 import { stepBallAndCollisions } from "../../game/systems";
 
 import { attachLocalInput, readIntent, blockInputFor } from "../input";

@@ -1,9 +1,9 @@
 // src/game/ball/scoring.ts
-import type { GameState } from "../state";
-import type { FrameEvents } from "./types";
-import { FREEZE_DURATION_MS } from "./constants";
-import { rotateService } from "./service";
-import { hasWinner } from "./win";
+import type { GameState } from "../../model";
+import type { FrameEvents } from "../../model";
+import { FREEZE_DURATION_MS } from "../../constants";
+import { rotateService } from "../flow";
+import { hasWinner } from "../flow";
 
 export function maybeScoreAndFreeze(
   s: GameState,

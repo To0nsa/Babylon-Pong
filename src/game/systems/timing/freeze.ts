@@ -1,6 +1,6 @@
 // src/game/ball/freeze.ts
-import type { GameState } from "../state";
-import { serveFrom } from "./phases";
+import type { GameState } from "../model/state";
+import { serveFrom } from "./flow/phases";
 
 export function stepFreeze(s: GameState, dt: number): GameState {
   const left = Math.max(0, (s.tFreezeMs ?? 0) - dt * 1000);

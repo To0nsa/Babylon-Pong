@@ -1,7 +1,7 @@
 // src/game/systems/collisions.ts
-import type { GameState } from "../state";
-import type { FrameEvents } from "./types";
-import { clampZ } from "./utils";
+import type { GameState } from "../../model";
+import type { FrameEvents } from "../../model";
+import { clampZ } from "../utils";
 
 export function collideWalls(
   s: GameState,

@@ -1,5 +1,5 @@
 // src/game/systems/utils.ts
-import type { GameState } from "../state";
+import type { GameState } from "../model/state";
 
 export function clampZ(s: GameState, z: number): number {
   const max = s.bounds.halfWidthZ - s.bounds.margin - s.bounds.ballRadius;
