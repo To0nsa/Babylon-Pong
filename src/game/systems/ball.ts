@@ -110,7 +110,7 @@ function collidePaddle(s: GameState, dt: number): GameState {
     const crosses = x >= plane && nextX <= plane;
     const withinZ =
       Math.abs(z - s.paddles.left.z) <=
-      s.bounds.paddleHalfDepthZ + s.bounds.ballRadius;
+      s.bounds.paddleHalfDepthZ + s.bounds.ballRadius / 2;
     if (crosses && withinZ) {
       const t = (x - plane) / (x - nextX || 1e-6);
       z = z + vz * dt * t;
@@ -127,7 +127,7 @@ function collidePaddle(s: GameState, dt: number): GameState {
     const crosses = x <= plane && nextX >= plane;
     const withinZ =
       Math.abs(z - s.paddles.right.z) <=
-      s.bounds.paddleHalfDepthZ + s.bounds.ballRadius;
+      s.bounds.paddleHalfDepthZ + s.bounds.ballRadius / 2;
     if (crosses && withinZ) {
       const t = (plane - x) / (nextX - x || 1e-6);
       z = z + vz * dt * t;
