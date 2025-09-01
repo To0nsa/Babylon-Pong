@@ -7,7 +7,7 @@ import { hasGameWinner } from "../flow";
 import type { TableEnd } from "shared/types";
 
 export function maybeScoreAndFreeze(s: GameState, events: FrameEvents): GameState {
-  const goalX = s.bounds.halfLengthX + s.bounds.margin + s.bounds.ballRadius;
+  const goalX = s.bounds.halfLengthX + s.bounds.ballRadius;
   const x = s.ball.x;
 
   if (x <= -goalX) {

@@ -1,7 +1,7 @@
 // src/game/systems/timing/freeze.ts
 import type { TableEnd } from "shared/types";
 import type { GameState } from "../../model";
-import { serveFrom } from "../flow";
+import { serveFrom } from ".";
 
 export function stepPauseBtwPoints(s: GameState, dt: number): GameState {
   const left = Math.max(0, (s.tPauseBtwPointsMs ?? 0) - dt * 1000);

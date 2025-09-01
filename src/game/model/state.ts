@@ -71,7 +71,6 @@ export type GameState = {
     leftPaddleX: number; // world X
     rightPaddleX: number; // world X
     ballRadius: number;
-    margin: number;
   };
 
   params: {

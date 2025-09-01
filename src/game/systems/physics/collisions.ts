@@ -10,7 +10,7 @@ export function collideWalls(
   let { x, z, vx, vz } = s.ball;
 
   const nextZ = z + vz * dt;
-  const zMax = s.bounds.halfWidthZ - s.bounds.margin - s.bounds.ballRadius;
+  const zMax = s.bounds.halfWidthZ - s.bounds.ballRadius;
 
   let wallHit: FrameEvents["wallHit"] | undefined;
 

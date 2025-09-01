@@ -27,7 +27,6 @@ export function addNet(
     height?: number; // meters (official TT net ~0.1525)
     thickness?: number; // extrusion along X (meters)
     cornerRadius?: number; // rounded corner radius (meters)
-    marginZ?: number; // small inset from table edges along Z (meters)
     cornerSteps?: number; // arc tessellation per corner
   },
 ): NetHandle {
@@ -35,7 +34,6 @@ export function addNet(
     height = 0.1525,
     thickness = 0.015,
     cornerRadius = 0.03,
-    marginZ = 0.08,
     cornerSteps = 8,
   } = opts ?? {};
 
@@ -46,7 +44,7 @@ export function addNet(
   const tableWidthZ = tableBB.extendSize.z * 2; // total Z span
 
   // Net spans across Z with a small inset
-  const netWidth = Math.max(0.01, tableWidthZ + marginZ);
+  const netWidth = Math.max(0.01, tableWidthZ);
   const radius = Math.min(cornerRadius, 0.5 * Math.min(netWidth, height));
 
   // Build a 2D rounded-rectangle profile in the XY plane (Z=0), then extrude along X.

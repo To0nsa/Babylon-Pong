@@ -12,7 +12,6 @@ export function createBounces(
   halfLengthX: number,
   leftPaddle: AbstractMesh,
   rightPaddle: AbstractMesh,
-  margin: number,
 ) {
   const baseY = tableTopY + ballRadius / 2;
   const paddleHeight = leftPaddle.getBoundingInfo().boundingBox.extendSize.y;
@@ -29,7 +28,7 @@ export function createBounces(
   const MAX_ARC = 0.5;
 
   // absolute goal-line x (positive magnitude); left goal is -goalX, right is +goalX
-  const goalX = halfLengthX + margin + ballRadius;
+  const goalX = halfLengthX + ballRadius;
 
   const rng = new LcgRng(deriveSeed(halfLengthX * 1000));
   const rand01 = () => rng.next();

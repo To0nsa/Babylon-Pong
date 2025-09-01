@@ -3,8 +3,7 @@ import type { GameState } from "../../game/model/state";
 
 /** Read Babylon geometry once and derive headless bounds + zMax for FX. */
 export function computeBounds(
-  world: WorldKit,
-  margin = 0.006,
+  world: WorldKit
 ): {
   bounds: GameState["bounds"];
   zMax: number;
@@ -15,20 +14,27 @@ export function computeBounds(
     ball,
   } = world;
 
+  // Ensure world matrices & bounding info are up to date (no-arg variant)
+  table.tableTop.computeWorldMatrix(true);
+  left.mesh.computeWorldMatrix(true);
+  right.mesh.computeWorldMatrix(true);
+  ball.mesh.computeWorldMatrix(true);
+
   const tableBB = table.tableTop.getBoundingInfo().boundingBox;
-  const halfLengthX = tableBB.extendSize.x;
-  const halfWidthZ = tableBB.extendSize.z;
+  const halfLengthX = tableBB.extendSizeWorld.x;
+  const halfWidthZ  = tableBB.extendSizeWorld.z;
 
   const leftBB = left.mesh.getBoundingInfo().boundingBox;
-  const paddleHalfDepthZ = leftBB.extendSize.z;
+  const paddleHalfDepthZ = leftBB.extendSizeWorld.z;
 
-  const ballInfo = ball.mesh.getBoundingInfo();
-  const ballRadius = ballInfo.boundingSphere.radiusWorld;
+  const ballBI = ball.mesh.getBoundingInfo();
+  const ballRadius = ballBI.boundingSphere.radiusWorld;
 
-  const leftPaddleX = left.mesh.position.x;
-  const rightPaddleX = right.mesh.position.x;
+  const leftPaddleX  = left.mesh.getBoundingInfo().boundingBox.centerWorld.x;
+  const rightPaddleX = right.mesh.getBoundingInfo().boundingBox.centerWorld.x;
 
-  const zMax = halfWidthZ - margin - ballRadius;
+  // Max |z| allowed for the BALL CENTER
+  const zMax = halfWidthZ - ballRadius;
 
   const bounds: GameState["bounds"] = {
     halfLengthX,
@@ -37,7 +43,6 @@ export function computeBounds(
     leftPaddleX,
     rightPaddleX,
     ballRadius,
-    margin,
   };
 
   return { bounds, zMax };

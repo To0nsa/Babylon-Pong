@@ -10,7 +10,7 @@ export function stepPaddles(
 ): GameState {
   const clampZ = (z: number) => {
     const max =
-      s.bounds.halfWidthZ - s.bounds.margin - s.bounds.paddleHalfDepthZ;
+      s.bounds.halfWidthZ - s.bounds.paddleHalfDepthZ;
     return Math.max(-max, Math.min(max, z));
   };
 

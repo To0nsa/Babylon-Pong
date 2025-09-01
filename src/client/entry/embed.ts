@@ -46,7 +46,7 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
   hud.attachToCanvas(canvas);
 
   // Bounds once (render → headless)
-  const { bounds, zMax } = computeBounds(world, 0.006);
+  const { bounds, zMax } = computeBounds(world);
 
   // FX manager (centralized)
   const fx = new FXManager(scene, {
@@ -63,8 +63,7 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
     bounds.ballRadius,
     bounds.halfLengthX,
     left.mesh,
-    right.mesh,
-    bounds.margin,
+    right.mesh
   );
   Bounces.scheduleServe(1);
 

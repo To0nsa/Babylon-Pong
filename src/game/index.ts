@@ -1,5 +1,5 @@
 // Core domain & state
-export type { Side, Paddle, Ball, Phase, GameState } from "./model/state";
+export type { Paddle, Ball, Phase, GameState } from "./model/state";
 export { createInitialState } from "./model/state";
 
 // Public headless API
@@ -10,7 +10,7 @@ export type { InputIntent } from "./input/input";
 export { ZeroIntent } from "./input/input";
 
 // Systems — high level tick and common steps
-export { stepBallAndCollisions } from "./systems/timing/step";
+export { stepBallAndCollisions } from "./systems/flow/phaseManager";
 export { stepPaddles } from "./systems/control/paddle";
 export type { FrameEvents } from "./model/types";
 
