@@ -3,78 +3,65 @@ import type { GameState } from "../../model";
 import type { FrameEvents } from "../../model";
 import { FREEZE_DURATION_MS } from "../../constants";
 import { rotateService } from "../flow";
-import { hasWinner } from "../flow";
+import { hasGameWinner } from "../flow";
+import type { TableEnd } from "shared/types";
 
-export function maybeScoreAndFreeze(
-  s: GameState,
-  events: FrameEvents,
-): GameState {
+export function maybeScoreAndFreeze(s: GameState, events: FrameEvents): GameState {
   const goalX = s.bounds.halfLengthX + s.bounds.margin + s.bounds.ballRadius;
   const x = s.ball.x;
 
-  // Right goal crossed -> left points
-  if (x >= goalX) {
-    const freezeX = goalX;
-    const freezeZ = s.ball.z;
-    events.explode = { x: freezeX, z: freezeZ };
-
-    const scored = { ...s, points: { ...s.points, left: s.points.east + 1 } };
-
-    const win = hasWinner(scored);
-    if (win) {
-      return {
-        ...scored,
-        phase: "gameOver",
-        gameWinner: win,
-        tPauseBtwPointsMs: undefined,
-        nextServe: undefined,
-        ball: { x: freezeX, z: freezeZ, vx: 0, vz: 0 },
-      };
-    }
-
-    const { nextServer, nextTurns } = rotateService(scored);
-    return {
-      ...scored,
-      phase: "pauseBtwPoints",
-      tPauseBtwPointsMs: FREEZE_DURATION_MS,
-      nextServe: nextServer,
-      server: nextServer,
-      serviceTurnsLeft: nextTurns,
-      ball: { x: freezeX, z: freezeZ, vx: 0, vz: 0 },
-    };
-  }
-
-  // Left goal crossed -> right points
   if (x <= -goalX) {
-    const freezeX = -goalX;
-    const freezeZ = s.ball.z;
-    events.explode = { x: freezeX, z: freezeZ };
+    return handleGoalCross("east", s, events, goalX);
+  }
+  if (x >= goalX) {
+    return handleGoalCross("west", s, events, goalX);
+  }
+  return s;
+}
 
-    const scored = { ...s, points: { ...s.points, west: s.points.west + 1 } };
+function handleGoalCross(tableEnd: TableEnd, s: GameState, events: FrameEvents, goalX: number): GameState {
+  let freezeX: number;
+  if (tableEnd === "east") {
+    freezeX = -goalX;
+  } else {
+    freezeX = goalX;
+  }
+  const freezeZ = s.ball.z;
 
-    const win = hasWinner(scored);
-    if (win) {
-      return {
-        ...scored,
-        phase: "gameOver",
-        gameWinner: win,
-        tPauseBtwPointsMs: undefined,
-        nextServe: undefined,
-        ball: { x: freezeX, z: freezeZ, vx: 0, vz: 0 },
-      };
-    }
+  // FX trigger
+  events.explode = { x: freezeX, z: freezeZ };
 
-    const { nextServer, nextTurns } = rotateService(scored);
+  let points: typeof s.points;
+  if (tableEnd === "east") {
+    points = { ...s.points, west: s.points.west + 1 };
+  } else {
+    points = { ...s.points, east: s.points.east + 1 };
+  }
+
+  const scored: GameState = {
+    ...s,
+    points,
+    ball: { x: freezeX, z: freezeZ, vx: 0, vz: 0 },
+  };
+
+  const win = hasGameWinner(scored);
+  if (win) {
     return {
       ...scored,
-      phase: "pauseBtwPoints",
-      tPauseBtwPointsMs: FREEZE_DURATION_MS,
-      nextServe: nextServer,
-      server: nextServer,
-      serviceTurnsLeft: nextTurns,
-      ball: { x: freezeX, z: freezeZ, vx: 0, vz: 0 },
+      phase: "gameOver",
+      gameWinner: win,
+      tPauseBtwPointsMs: undefined,
+      nextServe: undefined,
     };
   }
 
-  return s;
+  const { nextServer, nextTurns } = rotateService(scored);
+  return {
+    ...scored,
+    phase: "pauseBtwPoints",
+    tPauseBtwPointsMs: FREEZE_DURATION_MS,
+    nextServe: nextServer,
+    server: nextServer,
+    serviceTurnsLeft: nextTurns,
+  };
 }

@@ -10,6 +10,6 @@ export function isServePhase(p: GameState["phase"]): boolean {
   return p === "serveEast" || p === "serveWest";
 }
 
-export function isFreezePhase(p: GameState["phase"]): p is "pauseBtwPoints" {
+export function isPauseBtwPoints(p: GameState["phase"]): p is "pauseBtwPoints" {
   return p === "pauseBtwPoints";
 }

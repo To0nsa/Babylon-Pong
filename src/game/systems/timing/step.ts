@@ -1,10 +1,10 @@
 // src/game/systems/timing/step.ts
 import type { GameState } from "../../model/state";
 import type { FrameEvents } from "../../model/types";
-import { isFreezePhase, isServePhase } from "../utils";
+import { isPauseBtwPoints, isServePhase } from "../utils";
 import { collideWalls, collidePaddle } from "../physics";
 import { maybeScoreAndFreeze } from "../scoring";
-import { stepFreeze } from "./freeze";
+import { stepPauseBtwPoints } from "./freeze";
 
 export function stepBallAndCollisions(
   state: GameState,
@@ -13,22 +13,25 @@ export function stepBallAndCollisions(
   let s = { ...state };
   const events: FrameEvents = {};
 
-  if (s.phase === "gameOver") return { next: s, events };
+  if (s.phase === "gameOver")
+    return { next: s, events };
 
-  if (isServePhase(s.phase)) s = { ...s, phase: "rally" };
-  if (isFreezePhase(s.phase)) return { next: stepFreeze(s, dt), events };
+  if (isServePhase(s.phase))
+    s = { ...s, phase: "rally" };
+
+  if (isPauseBtwPoints(s.phase))
+    return { next: stepPauseBtwPoints(s, dt), events };
 
   // ----- Normal rally -----
   const w = collideWalls(s, dt);
   s = w.s;
-  if (w.wallHit) events.wallHit = w.wallHit;
+  if (w.wallHit)
+    events.wallHit = w.wallHit;
 
   s = collidePaddle(s, dt);
-
-  // Integrate X directly here so we can detect crossing this frame
   s = { ...s, ball: { ...s.ball, x: s.ball.x + s.ball.vx * dt } };
 
-  // If crossed a goal, enter freeze & emit explosion
+  // If crossed a goal, enter pause between points & emit explosion
   s = maybeScoreAndFreeze(s, events);
 
   return { next: s, events };
