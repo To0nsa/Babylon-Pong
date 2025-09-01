@@ -36,7 +36,7 @@ export function handleSteps(
     s = collidePaddle(s, dt);
     s = { ...s, ball: { ...s.ball, x: s.ball.x + s.ball.vx * dt } };
 
-    // Check for goal → freeze ball & enter pause (no serve logic here)
+    // Check for goal → freeze ball & enter pause to next game
     s = maybeScoreAndFreeze(s, events);
   }
 
