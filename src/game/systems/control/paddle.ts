@@ -19,14 +19,14 @@ export function stepPaddles(
   const leftVz = inpt.leftAxis * speed;
   const rightVz = inpt.rightAxis * speed;
 
-  const leftZ = clampZ(s.paddles.left.z + leftVz * dt);
-  const rightZ = clampZ(s.paddles.right.z + rightVz * dt);
+  const leftZ = clampZ(s.paddles.P1.z + leftVz * dt);
+  const rightZ = clampZ(s.paddles.P2.z + rightVz * dt);
 
   return {
     ...s,
     paddles: {
-      left: { z: leftZ, vz: leftVz },
-      right: { z: rightZ, vz: rightVz },
+      P1: { z: leftZ, vz: leftVz },
+      P2: { z: rightZ, vz: rightVz },
     },
   };
 }

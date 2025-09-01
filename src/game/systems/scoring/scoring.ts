@@ -12,20 +12,20 @@ export function maybeScoreAndFreeze(
   const goalX = s.bounds.halfLengthX + s.bounds.margin + s.bounds.ballRadius;
   const x = s.ball.x;
 
-  // Right goal crossed -> left scores
+  // Right goal crossed -> left points
   if (x >= goalX) {
     const freezeX = goalX;
     const freezeZ = s.ball.z;
     events.explode = { x: freezeX, z: freezeZ };
 
-    const scored = { ...s, scores: { ...s.scores, left: s.scores.left + 1 } };
+    const scored = { ...s, points: { ...s.points, left: s.points.east + 1 } };
 
     const win = hasWinner(scored);
     if (win) {
       return {
         ...scored,
         phase: "gameOver",
-        winner: win,
+        gameWinner: win,
         tFreezeMs: undefined,
         nextServe: undefined,
         ball: { x: freezeX, z: freezeZ, vx: 0, vz: 0 },
@@ -44,20 +44,20 @@ export function maybeScoreAndFreeze(
     };
   }
 
-  // Left goal crossed -> right scores
+  // Left goal crossed -> right points
   if (x <= -goalX) {
     const freezeX = -goalX;
     const freezeZ = s.ball.z;
     events.explode = { x: freezeX, z: freezeZ };
 
-    const scored = { ...s, scores: { ...s.scores, right: s.scores.right + 1 } };
+    const scored = { ...s, points: { ...s.points, west: s.points.west + 1 } };
 
     const win = hasWinner(scored);
     if (win) {
       return {
         ...scored,
         phase: "gameOver",
-        winner: win,
+        gameWinner: win,
         tFreezeMs: undefined,
         nextServe: undefined,
         ball: { x: freezeX, z: freezeZ, vx: 0, vz: 0 },

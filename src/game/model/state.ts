@@ -1,8 +1,11 @@
 // src/game/state.ts
-export type Side = "left" | "right";
 
+import type { TableEnd } from "../../shared/types";
+
+/** Paddle state along Z (depth). */
 export type Paddle = { z: number; vz: number };
 
+/** Ball kinematics in X (length) and Z (depth). */
 export type Ball = {
   x: number;
   z: number;
@@ -10,30 +13,52 @@ export type Ball = {
   vz: number;
 };
 
+/**
+ * High-level flow:
+ * - serveLeft / serveRight: awaiting serve toss/hit
+ * - rally: ball in play
+ * - pointFreeze: short pause after a point
+ * - gameOver: current game concluded (someone reached targetScore, winBy)
+ * - matchOver: match concluded (someone reached targetGames)
+ */
 export type Phase =
-  | "serveLeft"
-  | "serveRight"
+  | "serveEast"
+  | "serveWest"
   | "rally"
   | "pointFreeze"
-  | "gameOver";
+  | "gameOver"
+  | "matchOver";
 
+/**
+ * GameState (kept name to avoid breaking imports) now uses table-tennis terms:
+ * - points: running points within the current game (to 11, win by 2)
+ * - games: games won within the match (best of N)
+ */
 export type GameState = {
-  paddles: { left: Paddle; right: Paddle };
+  paddles: { P1: Paddle; P2: Paddle };
   ball: Ball;
-  scores: { left: number; right: number };
+
+  /** Current game's points. */
+  points: { east: number; west: number };
+
+  /** Match score in games (best-of). */
+  games: { east: number; west: number };
+
   phase: Phase;
 
-  /** Remaining ms for point freeze (between rallies). */
+  /** Remaining ms for the freeze between rallies. */
   tFreezeMs?: number;
-  /** Which side will serve next after freeze. */
-  nextServe?: Side;
 
-  /** Current server and remaining serves in the current turn. */
-  server: Side;
+  /** Which side will serve next after freeze. */
+  nextServe?: TableEnd;
+
+  /** Current server and remaining serves in the current turn (block). */
+  server: TableEnd;
   serviceTurnsLeft: number;
 
-  /** Set when phase === "gameOver". */
-  winner?: Side;
+  /** Winners at game/match boundaries. */
+  gameWinner?: TableEnd;
+  matchWinner?: TableEnd;
 
   bounds: {
     halfLengthX: number; // table half-length along X
@@ -53,33 +78,48 @@ export type GameState = {
     restitutionWall: number;
 
     /** Scoring/service rules (table-tennis style by default) */
-    targetScore: number; // e.g. 11
-    winBy: number; // e.g. 2
-    servesPerTurn: number; // e.g. 2 (pre-deuce)
-    deuceServesPerTurn: number; // e.g. 1 (at deuce)
+    targetScore: number; // points to win a game (e.g., 11)
+    winBy: number; // difference to win a game (e.g., 2)
+    servesPerTurn: number; // pre-deuce: serves before switching (e.g., 2)
+    deuceServesPerTurn: number; // at deuce: serves before switching (e.g., 1)
     /** Deuce threshold; default is targetScore - 1. */
     deuceAt: number;
+
+    /** Match format */
+    bestOf: number; // must be odd: 3, 5, 7...
+    targetGames: number; // games needed to win the match (ceil(bestOf/2))
   };
 };
 
 export function createInitialState(bounds: GameState["bounds"]): GameState {
+  // ——— Table-tennis defaults ———
   const targetScore = 11;
   const winBy = 2;
   const servesPerTurn = 2;
   const deuceServesPerTurn = 1;
   const deuceAt = targetScore - 1;
 
-  return {
-    paddles: { left: { z: 0, vz: 0 }, right: { z: 0, vz: 0 } },
-    ball: { x: 0, z: 0, vx: 0, vz: 0 },
-    scores: { left: 0, right: 0 },
+  // Match defaults (best of 5 games → first to 3)
+  const bestOf = 5;
+  const targetGames = Math.ceil(bestOf / 2);
 
-    // Boot with left serving first (and 2 serves in this block)
-    phase: "serveLeft",
+  return {
+    paddles: { P1: { z: 0, vz: 0 }, P2: { z: 0, vz: 0 } },
+    ball: { x: 0, z: 0, vx: 0, vz: 0 },
+
+    // points (this game) and games (match)
+    points: { east: 0, west: 0 },
+    games: { east: 0, west: 0 },
+
+    // Boot with east serving first (and 2 serves in this block)
+    phase: "serveEast",
     tFreezeMs: undefined,
     nextServe: undefined,
-    server: "left",
+    server: "east",
     serviceTurnsLeft: servesPerTurn,
+
+    gameWinner: undefined,
+    matchWinner: undefined,
 
     bounds,
     params: {
@@ -95,6 +135,10 @@ export function createInitialState(bounds: GameState["bounds"]): GameState {
       servesPerTurn,
       deuceServesPerTurn,
       deuceAt,
+
+      // match rules
+      bestOf,
+      targetGames,
     },
   };
 }

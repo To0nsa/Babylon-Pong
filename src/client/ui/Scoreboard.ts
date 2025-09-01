@@ -1,8 +1,8 @@
 // src/client/ui/Scoreboard.ts
-export type ServerSide = "left" | "right";
+export type ServerSide = "east" | "west";
 
 export type DomScoreboardAPI = {
-  setScores: (left: number, right: number) => void;
+  setPoints: (left: number, right: number) => void;
   setServer: (side: ServerSide) => void;
   setDeuce: (flag: boolean) => void;
   setPlayerNames: (left: string, right: string) => void;
@@ -170,7 +170,7 @@ export function createScoreboard(): DomScoreboardAPI {
   overlay.appendChild(deuce);
 
   // ===== API bits
-  const flipScore = (el: HTMLElement, value: number) => {
+  const flipPoint = (el: HTMLElement, value: number) => {
     const next = String((value | 0) < 0 ? 0 : value | 0);
     if (el.textContent === next) return;
     el.classList.remove("score-pop", "score-flip");
@@ -181,9 +181,9 @@ export function createScoreboard(): DomScoreboardAPI {
     el.classList.add("score-flip", "score-pop");
   };
 
-  const setScores = (l: number, r: number) => {
-    flipScore(leftScore, l);
-    flipScore(rightScore, r);
+  const setPoints = (l: number, r: number) => {
+    flipPoint(leftScore, l);
+    flipPoint(rightScore, r);
   };
 
   // Serving highlight (static ring on the serving player's name)
@@ -191,7 +191,7 @@ export function createScoreboard(): DomScoreboardAPI {
   const setServer = (side: ServerSide) => {
     leftWrap.classList.remove(...ringClasses);
     rightWrap.classList.remove(...ringClasses);
-    (side === "left" ? leftWrap : rightWrap).classList.add(...ringClasses);
+    (side === "east" ? leftWrap : rightWrap).classList.add(...ringClasses);
   };
 
   const setDeuce = (flag: boolean) => {
@@ -234,7 +234,7 @@ export function createScoreboard(): DomScoreboardAPI {
   };
 
   return {
-    setScores,
+    setPoints,
     setServer,
     setDeuce,
     setPlayerNames,

@@ -1,13 +1,14 @@
 // src/game/ball/phases.ts
+import type { TableEnd } from "shared/types";
 import type { GameState } from "../../model";
 
-export function serveFrom(side: "left" | "right", s: GameState): GameState {
-  const dir = side === "left" ? 1 : -1;
+export function serveFrom(side: TableEnd, s: GameState): GameState {
+  const dir = side === "east" ? 1 : -1;
   const angle = 0;
   return {
     ...s,
-    paddles: { left: { z: 0, vz: 0 }, right: { z: 0, vz: 0 } },
-    phase: side === "left" ? "serveLeft" : "serveRight",
+    paddles: { P1: { z: 0, vz: 0 }, P2: { z: 0, vz: 0 } },
+    phase: side === "east" ? "serveEast" : "serveWest",
     tFreezeMs: undefined,
     nextServe: undefined,
     ball: {

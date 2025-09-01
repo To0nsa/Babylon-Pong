@@ -1,5 +1,6 @@
 // src/game/match/controller.ts
-import type { GameState, Side } from "../model";
+import type { TableEnd } from "../../shared/types";
+import type { GameState } from "../model";
 import { createInitialState } from "../model";
 import type { Ruleset } from "../rules";
 import { sideOpposite } from "../rules";
@@ -7,33 +8,33 @@ import { sideOpposite } from "../rules";
 export type MatchSnapshot = {
   bestOf: number;
   currentGameIndex: number; // 1-based
-  gamesWon: { left: number; right: number };
-  matchWinner?: Side;
+  gamesWon: { east: number; west: number };
+  matchWinner?: TableEnd;
   endsFlippedThisGame: boolean; // did we flip ends at game start
   midSwapDoneThisGame: boolean; // did we flip ends at 5 in deciding
-  initialServerThisGame: Side; // who started this game serving
+  initialServerThisGame: TableEnd; // who started this game serving
 };
 
 export type MatchEvents = {
   swapSidesNow?: true; // trigger player-end swap (render/input can react)
-  gameOver?: { winner: Side; gameIndex: number };
-  matchOver?: { winner: Side };
+  gameOver?: { winner: TableEnd; gameIndex: number };
+  matchOver?: { winner: TableEnd };
 };
 
 export function createMatchController(
   bounds: GameState["bounds"],
   rules: Ruleset,
-  initialServer: Side = "left",
+  initialServer: TableEnd = "east",
 ) {
   let game = addRulesToState(createInitialState(bounds), rules, initialServer);
   let currentGameIndex = 1;
-  let gamesWon = { left: 0, right: 0 };
-  let matchWinner: Side | undefined;
+  let gamesWon = { east: 0, west: 0 };
+  let matchWinner: TableEnd | undefined;
   let endsFlippedThisGame = false;
   let midSwapDoneThisGame = false;
-  let initialServerThisGame: Side = initialServer;
+  let initialServerThisGame: TableEnd = initialServer;
 
-  function addRulesToState(s: GameState, r: Ruleset, server: Side): GameState {
+  function addRulesToState(s: GameState, r: Ruleset, server: TableEnd): GameState {
     return {
       ...s,
       server,
@@ -75,22 +76,22 @@ export function createMatchController(
       deciding &&
       !midSwapDoneThisGame &&
       rules.match.decidingGameMidSwapAtPoints &&
-      (game.scores.left >= rules.match.decidingGameMidSwapAtPoints ||
-        game.scores.right >= rules.match.decidingGameMidSwapAtPoints)
+      (game.points.east >= rules.match.decidingGameMidSwapAtPoints ||
+        game.points.west >= rules.match.decidingGameMidSwapAtPoints)
     ) {
       midSwapDoneThisGame = true;
       events.swapSidesNow = true;
     }
 
-    if (game.phase === "gameOver" && game.winner) {
+    if (game.phase === "gameOver" && game.gameWinner) {
       // Record game win
-      gamesWon[game.winner]++;
+      gamesWon[game.gameWinner]++;
 
-      events.gameOver = { winner: game.winner, gameIndex: currentGameIndex };
+      events.gameOver = { winner: game.gameWinner, gameIndex: currentGameIndex };
 
       const need = Math.ceil(rules.match.bestOf / 2);
-      if (gamesWon.left >= need || gamesWon.right >= need) {
-        matchWinner = gamesWon.left > gamesWon.right ? "left" : "right";
+      if (gamesWon.east >= need || gamesWon.west >= need) {
+        matchWinner = gamesWon.east > gamesWon.west ? "east" : "west";
         events.matchOver = { winner: matchWinner };
         return { state: game, events };
       }
@@ -112,7 +113,7 @@ export function createMatchController(
         : initialServerThisGame;
       initialServerThisGame = nextInitialServer;
 
-      // Fresh game state (scores reset, serving reset) but same bounds/physics params
+      // Fresh game state (points reset, serving reset) but same bounds/physics params
       game = addRulesToState(
         createInitialState(game.bounds),
         rules,

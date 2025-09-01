@@ -40,14 +40,14 @@ export function collidePaddle(s: GameState, dt: number): GameState {
     const plane = s.bounds.leftPaddleX + s.bounds.ballRadius;
     const crosses = x >= plane && nextX <= plane;
     const withinZ =
-      Math.abs(z - s.paddles.left.z) <=
+      Math.abs(z - s.paddles.P1.z) <=
       s.bounds.paddleHalfDepthZ + s.bounds.ballRadius / 2;
     if (crosses && withinZ) {
       const t = (x - plane) / (x - nextX || 1e-6);
       z = z + vz * dt * t;
       x = plane;
       vx = -vx;
-      vz = vz + s.paddles.left.vz * s.params.zEnglish;
+      vz = vz + s.paddles.P1.vz * s.params.zEnglish;
       return { ...s, ball: { x, z: clampZ(s, z), vx, vz } };
     }
   }
@@ -57,14 +57,14 @@ export function collidePaddle(s: GameState, dt: number): GameState {
     const plane = s.bounds.rightPaddleX - s.bounds.ballRadius;
     const crosses = x <= plane && nextX >= plane;
     const withinZ =
-      Math.abs(z - s.paddles.right.z) <=
+      Math.abs(z - s.paddles.P2.z) <=
       s.bounds.paddleHalfDepthZ + s.bounds.ballRadius / 2;
     if (crosses && withinZ) {
       const t = (plane - x) / (nextX - x || 1e-6);
       z = z + vz * dt * t;
       x = plane;
       vx = -vx;
-      vz = vz + s.paddles.right.vz * s.params.zEnglish;
+      vz = vz + s.paddles.P2.vz * s.params.zEnglish;
       return { ...s, ball: { x, z: clampZ(s, z), vx, vz } };
     }
   }

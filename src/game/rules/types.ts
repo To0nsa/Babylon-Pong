@@ -1,5 +1,5 @@
 // src/game/rules/types.ts
-export type Side = "left" | "right";
+import type { TableEnd } from "shared/types";
 
 export type GameRules = {
   targetScore: number; // 11
@@ -21,5 +21,5 @@ export type Ruleset = {
   match: MatchRules;
 };
 
-export const sideOpposite = (s: Side): Side =>
-  s === "left" ? "right" : "left";
+export const sideOpposite = (s: TableEnd): TableEnd =>
+  s === "east" ? "west" : "east";

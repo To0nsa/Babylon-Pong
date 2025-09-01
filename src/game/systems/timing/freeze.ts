@@ -1,10 +1,11 @@
 // src/game/systems/timing/freeze.ts
+import type { TableEnd } from "shared/types";
 import type { GameState } from "../../model";
 import { serveFrom } from "../flow";
 
 export function stepFreeze(s: GameState, dt: number): GameState {
   const left = Math.max(0, (s.tFreezeMs ?? 0) - dt * 1000);
   if (left > 0) return { ...s, tFreezeMs: left };
-  const serveSide = s.nextServe ?? s.server ?? "left";
+  const serveSide: TableEnd = s.nextServe ?? s.server ?? "east";
   return serveFrom(serveSide, s);
 }

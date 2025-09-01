@@ -1,4 +1,5 @@
-import type { FrameEvents } from "../../game/systems/ball";
+// src/client/entry/eventsToFX.ts
+import type { FrameEvents } from "../../game";
 import type { FXManager } from "../FX/manager";
 
 export function applyFrameEvents(

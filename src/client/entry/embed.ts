@@ -83,7 +83,7 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
   const match = createMatchController(
     bounds,
     RULES,
-    /* initial server */ "left",
+    /* initial server */ "east",
   );
 
   // Input
@@ -106,39 +106,10 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
       const stepped = stepBallAndCollisions(state, dt);
 
       // 3) Match controller reacts to scoring / game over / match flow
-      const { state: controlled, events: matchEv } = match.afterPhysicsStep(
+      const { state: controlled } = match.afterPhysicsStep(
         stepped.next,
       );
       state = controlled;
-
-      if (matchEv.swapSidesNow) Logger.info("MATCH", "swapSidesNow");
-      if (matchEv.gameOver)
-        Logger.info(
-          "MATCH",
-          `Game ${matchEv.gameOver.gameIndex} won by ${matchEv.gameOver.winner}`,
-        );
-      if (matchEv.matchOver)
-        Logger.info("MATCH", `Match won by ${matchEv.matchOver.winner}`);
-
-      // Handle match-level events
-      if (matchEv.swapSidesNow) {
-        // TODO: If you bind players to sides, flip names/controls here.
-        // For now, just log; visuals are symmetric.
-        Logger.info(
-          "MATCH",
-          "swapSidesNow (new game or deciding-game mid-swap)",
-        );
-      }
-      if (matchEv.gameOver) {
-        Logger.info(
-          "MATCH",
-          `Game ${matchEv.gameOver.gameIndex} won by ${matchEv.gameOver.winner}`,
-        );
-      }
-      if (matchEv.matchOver) {
-        Logger.info("MATCH", `Match won by ${matchEv.matchOver.winner}`);
-        // Optional: display a banner or stop the loop; we keep running so users can admire victory.
-      }
 
       // 4) Entered serve? Trigger cues (compare with final phase after controller)
       const entered = detectEnteredServe(prevPhase, state.phase);
@@ -159,8 +130,8 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
       ball.mesh.position.set(state.ball.x, ballY, state.ball.z);
 
       if (!paddleAnim.isAnimating()) {
-        left.mesh.position.z = state.paddles.left.z;
-        right.mesh.position.z = state.paddles.right.z;
+        left.mesh.position.z = state.paddles.P1.z;
+        right.mesh.position.z = state.paddles.P2.z;
       }
 
       // 7) FX from events
