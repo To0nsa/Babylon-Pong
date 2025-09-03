@@ -37,7 +37,7 @@ export class FXManager {
     );
 
     this.burst = createGlowBurstFX(this.ctx, opts.ballMesh, opts.ballRadius, {
-      scale: 0.3,
+      scale: 0.6,
       intensity: 1.0,
       durations: { flash: 312, ring: 432, spark: 504 },
       sparkCount: 6,

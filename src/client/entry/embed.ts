@@ -4,9 +4,9 @@ import { createWorld } from "../scene";
 import type { PongInstance } from "./types";
 import Logger from "../../shared/utils/Logger";
 
-import { createInitialState } from "../../game/model/state";
+import { createInitialState } from "../../game";
 import { bootAsRally } from "../../game";
-import { stepPaddles } from "../../game/systems/control/paddle";
+import { stepPaddles } from "../../game";
 import { handleSteps } from "../../game";
 
 import {
@@ -48,8 +48,8 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
 
   const hud = createScoreboard();
   hud.attachToCanvas(canvas);
-  let names = { east: "Player 1", west: "Player 2" };
-  let hudMirrored = false;
+  let names = { east: "Magenta", west: "Green" };
+  const HUD_MIRRORED = false;
 
   // Bounds once (render → headless)
   const { bounds, zMax } = computeBounds(world);
@@ -125,8 +125,7 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
           right.mesh.material = m;
         }
 
-        // HUD mapping (points + server highlight) follows player
-        hudMirrored = !hudMirrored; // NEW
+        names = { east: names.west, west: names.east };
 
         // nice cross-over cue
         paddleAnim.cue(180);
@@ -144,7 +143,7 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
       }
 
       // 5) HUD
-      updateHUD(hud, state, { mirrored: hudMirrored, names });
+      updateHUD(hud, state, { mirrored: HUD_MIRRORED, names });
 
       // 6) Visual bounce Y + project meshes
       const ballY = Bounces.update(state.ball.x, state.ball.vx);

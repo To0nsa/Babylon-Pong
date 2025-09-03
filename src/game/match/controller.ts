@@ -16,8 +16,8 @@ export function createMatchController(
   let currentGameIndex = 1;
   let gamesWon = { east: 0, west: 0 };
   let matchWinner: TableEnd | undefined;
-  let endsFlippedThisGame = true;
-  let midSwapDoneThisGame = true;
+  let endsFlippedThisGame = false;
+  let midSwapDoneThisGame = false;
   let initialServerThisGame: TableEnd = initialServer;
 
   function addRulesToState(

@@ -23,7 +23,7 @@ export function onEnteredServe(
     blockInputFor: (ms: number) => void;
   },
 ) {
-  const dir = who === "east" ? 1 : -1;
+  const dir = who === "east" ? -1 : 1;
   decHide(deps.ballMesh);
   deps.Bounces.scheduleServe(dir);
   const blocked = deps.paddleAnim.cue(220);
