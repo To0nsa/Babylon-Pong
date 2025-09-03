@@ -20,10 +20,7 @@ export function createMatchController(
   let midSwapDoneThisGame = false;
   let initialServerThisGame: TableEnd = initialServer;
 
-  function addRulesToState(
-    s: GameState,
-    r: Ruleset,
-  ): GameState {
+  function addRulesToState(s: GameState, r: Ruleset): GameState {
     return {
       ...s,
       serviceTurnsLeft: r.game.servesPerTurn,

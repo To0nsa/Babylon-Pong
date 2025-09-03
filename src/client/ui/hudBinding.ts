@@ -24,4 +24,3 @@ export function updateHUD(
   // Names (optional) → UI slots
   if (names) hud.setPlayerNames(names.east, names.west);
 }
-

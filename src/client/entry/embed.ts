@@ -202,23 +202,21 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
       loop.start();
 
       // Play the intro flicker async; when it ends, arm the opening serve.
-      void fx
-        .serveSelection(initialServer)
-        .then(async () => {
-          // Give the ball velocity + correct serve phase
-          state = serveFrom(initialServer, state);
-          // No extra pause after the intro
-          state = { ...state, tPauseBtwPointsMs: 0 };
+      void fx.serveSelection(initialServer).then(async () => {
+        // Give the ball velocity + correct serve phase
+        state = serveFrom(initialServer, state);
+        // No extra pause after the intro
+        state = { ...state, tPauseBtwPointsMs: 0 };
 
-          // Schedule matching visual bounce path for the chosen side
-          const dir = initialServer === "east" ? -1 : 1;
-          Bounces.scheduleServe(dir);
+        // Schedule matching visual bounce path for the chosen side
+        const dir = initialServer === "east" ? -1 : 1;
+        Bounces.scheduleServe(dir);
 
-          // Fully unhide (we hid twice)
-          const { decHide } = await import("../FX");
-          decHide(ball.mesh);
-          decHide(ball.mesh);
-        });
+        // Fully unhide (we hid twice)
+        const { decHide } = await import("../FX");
+        decHide(ball.mesh);
+        decHide(ball.mesh);
+      });
     },
     destroy,
   };

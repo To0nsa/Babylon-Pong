@@ -107,10 +107,11 @@ export function createServeSelectionFX(
         // which beat are we on?
         const i = Math.min(beats - 1, Math.floor(t / beatMs));
         const onOppositeFirst = i % 2 === 0; // 0,2,4… = opposite, 1,3,5… = target
-        const active: Side =
-          onOppositeFirst
-            ? (targetSide === "left" ? "right" : "left")
-            : targetSide;
+        const active: Side = onOppositeFirst
+          ? targetSide === "left"
+            ? "right"
+            : "left"
+          : targetSide;
 
         const within = (t % beatMs) / beatMs; // 0..1 inside the beat
         const pulse = 1.0 - easeOutQuad(1 - within); // quick rise, soft fade

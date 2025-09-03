@@ -97,7 +97,10 @@ export type GameState = {
   };
 };
 
-export function createInitialState(bounds: GameState["bounds"], initialServer: TableEnd): GameState {
+export function createInitialState(
+  bounds: GameState["bounds"],
+  initialServer: TableEnd,
+): GameState {
   // ——— Table-tennis defaults ———
   const targetScore = 11;
   const winBy = 2;
