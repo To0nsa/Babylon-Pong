@@ -34,6 +34,8 @@ import { createMatchController } from "../../game/match/controller";
 import { pickInitialServer, type MatchSeed } from "../../shared/utils/rng";
 import { serveFrom } from "../../game/systems/flow";
 
+import { SERVE_SELECT_TOTAL_MS } from "../../game/constants";
+
 Logger.setLevel("debug");
 
 function localMatchSeed(): MatchSeed {
@@ -193,15 +195,15 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
       });
 
       // Avoid user moving paddles during pre-roll.
-      blockInputFor(2200);
-      introUntil = performance.now() + 2000;
+      blockInputFor(SERVE_SELECT_TOTAL_MS + 200);
+      introUntil = performance.now() + SERVE_SELECT_TOTAL_MS;
 
       // Begin rendering immediately so the effect is visible.
       loop.start();
 
       // Play the intro flicker async; when it ends, arm the opening serve.
       void fx
-        .serveSelection(initialServer, 2000)
+        .serveSelection(initialServer)
         .then(async () => {
           // Give the ball velocity + correct serve phase
           state = serveFrom(initialServer, state);

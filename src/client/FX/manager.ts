@@ -2,8 +2,7 @@
 import type { Scene } from "@babylonjs/core/scene";
 import type { Vector3 } from "@babylonjs/core/Maths/math";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
-import type { WallSide } from "../../shared/types";
-import type { TableEnd } from "../../shared/types";
+import type { WallSide, TableEnd } from "../../shared/types";
 
 import { createFXContext, type FXContext } from "./context";
 import { createForceFieldFX } from "./ForceField";
@@ -18,14 +17,8 @@ export type FXManagerOptions = {
   tableTop: AbstractMesh;
 };
 
-/**
- * Centralizes FX construction, shared resources, and triggers.
- * Keeps `embed.ts` small and declarative.
- */
 export class FXManager {
   readonly ctx: FXContext;
-
-  // Concrete effect instances
   private forceField: ReturnType<typeof createForceFieldFX>;
   private burst: ReturnType<typeof createGlowBurstFX>;
   private serveSelect: ReturnType<typeof createServeSelectionFX>;
@@ -47,45 +40,37 @@ export class FXManager {
       sparkCount: 6,
     });
 
-    this.serveSelect = createServeSelectionFX(this.ctx, opts.tableTop);
+    // Serve select now mirrors how Burst handles options: constructor-time.
+    this.serveSelect = createServeSelectionFX(this.ctx, opts.tableTop, {
+      beatMs: 120,
+      holdMs: 1000,
+      alpha: 0.35,
+    });
   }
 
-  /** Show a wall pulse (“force field”) on top/bottom at (x,y). */
   wallPulse(side: WallSide, x: number, y: number) {
     this.forceField.trigger(side, x, y);
   }
 
-  /** Emit a glow burst at world coordinates. */
   burstAt(x: number, y: number, z: number) {
     this.burst.trigger(x, y, z);
   }
 
-  /** Convenience for vector positions. */
   burstAtV3(p: Vector3) {
     this.burst.trigger(p.x, p.y, p.z);
   }
 
-  async serveSelection(end: TableEnd, ms = 2000): Promise<void> {
-    await this.serveSelect.trigger(end, ms);
+  // Duration is a constant; no param.
+  async serveSelection(end: TableEnd): Promise<void> {
+    await this.serveSelect.trigger(end);
   }
 
-  /**
-   * Optional: attach to your headless/game event bus.
-   * Provide a tiny adapter so render logic subscribes here, not in embed.ts.
-   */
-  /*   attachTo(bus: {
-    onWallHit?: (cb: (side: Side, x: number, y: number) => void) => void;
-    onBallExplode?: (cb: (x: number, y: number, z: number) => void) => void;
-  }) {
-    bus.onWallHit?.((side, x, y) => this.wallPulse(side, x, y));
-    bus.onBallExplode?.((x, y, z) => this.burstAt(x, y, z));
-  } */
-
-  /** Dispose all owned effects/resources (idempotent). */
   dispose() {
     this.forceField?.dispose?.();
     this.burst?.dispose?.();
     this.serveSelect?.dispose?.();
-    // add per-frame hooks or pools, clean up here too
   }
 }
+
+// Optional: export the constant through this module too, if convenient:
+// export { SERVE_SELECT_TOTAL_MS } from "./ServeSelect";
