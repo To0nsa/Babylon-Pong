@@ -1,11 +1,11 @@
-import { defineConfig } from 'vite'
-import tailwindcss from '@tailwindcss/vite'
+import { defineConfig } from "vite";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   build: {
     lib: {
       entry: "src/embed.ts",
-      name: "BabylonPong",             // window.BabylonPong in IIFE build
+      name: "BabylonPong", // window.BabylonPong in IIFE build
       fileName: "babylon-pong",
       formats: ["es", "iife"],
     },
@@ -19,7 +19,5 @@ export default defineConfig({
     },
     sourcemap: true,
   },
-    plugins: [
-        tailwindcss(),
-    ],
-})
+  plugins: [tailwindcss()],
+});

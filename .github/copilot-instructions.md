@@ -5,12 +5,11 @@
 - Target: **Babylon.js** games with `babylon.toolkit.js`
 - Use **Unity-like MonoBehaviour lifecycle**: `protected awake()`, `start()`, `update()`, `late()`, `fixed()`
 
-
 ## 📊 TypeScript Style
 
 - **Classic UMD TypeScript**:
   - UMD style `types` configurations
-	- No triple-slash or decorators or ESM
+  - No triple-slash or decorators or ESM
 - **Exported classes**:
   - If the original C# `class` extends `MonoBehaviour` or `EditorScriptComponent`, extend `TOOLKIT.ScriptComponent`
   - Wrapped in `PROJECT` namespace
@@ -18,10 +17,10 @@
   - C# yield should convert to async/await in TypeScript
   - Unity transform or game object is a `BABYLON.TransformNode`
   - Always use full class names with namespaces (e.g., `PROJECT.MyClass`)
-- **Typing**:  
-  - Always fully type variables/functions  
-  - Never use `: any` for known/converted types  
-  - Never use `this.properties` (use `this.myprop`)  
+- **Typing**:
+  - Always fully type variables/functions
+  - Never use `: any` for known/converted types
+  - Never use `this.properties` (use `this.myprop`)
   - Never auto-correct spelling; use C# names in camelCase
 - **Format**:
   - Always format class, enums and interface names using pascal naming. For example, keep `MyClass` and `IMyInterface` and `EMyEnum` pascal naming
@@ -40,11 +39,11 @@
 
 ## 🏗️ Constructor
 
-  ```typescript
-  constructor(transform: BABYLON.TransformNode, scene: BABYLON.Scene, properties: any = {}, alias: string = "#FULLCLASSNAME#") {
-      super(transform, scene, properties, alias);
-  }
-  ```
+```typescript
+constructor(transform: BABYLON.TransformNode, scene: BABYLON.Scene, properties: any = {}, alias: string = "#FULLCLASSNAME#") {
+    super(transform, scene, properties, alias);
+}
+```
 
 ## 🧩 Class & Interface Rules
 
@@ -57,11 +56,11 @@
   - **Only generate a TypeScript interface if it is defined in the C# code being converted.**
     - If an interface is only referenced, do **not** generate the interface in the output—just reference it in the `implements` clause
 
-    | Scenario                                  | Generate Interface? | Members Optional? |
-    |-------------------------------------------|---------------------|-------------------|
-    | Interface defined in C# file              | Yes                 | Yes               |
-    | Interface only referenced, not defined    | No                  | N/A               |
-  
+    | Scenario                               | Generate Interface? | Members Optional? |
+    | -------------------------------------- | ------------------- | ----------------- |
+    | Interface defined in C# file           | Yes                 | Yes               |
+    | Interface only referenced, not defined | No                  | N/A               |
+
 ## 🦮 Lifecycle & Component Access
 
 - Use `awake()` for initializing values not set with defaults. Do not create if not needed
@@ -100,30 +99,30 @@
 
 ## 🎮 Babylon Toolkit Patterns
 
-- `this.scene` = current scene  
+- `this.scene` = current scene
 - `this.transform` = transform node / game object
-- `this.getDeltaTime()` = deltaTime (seconds)  
+- `this.getDeltaTime()` = deltaTime (seconds)
 - `TOOLKIT.SceneManager.GetComponent()` = get components
 - `TOOLKIT.SceneManager.GetLastCreatedScene()` = last scene
 - `TOOLKIT.SceneManager.PauseRenderLoop` = pause game
 - `TOOLKIT.SceneManager.WaitForSeconds` = yield wait for seconds
-- Input: use `IC` = alias for `TOOLKIT.InputController`  
-- Physics: `this.transform.physicsBody`  
-- Audio: `TOOLKIT.AudioSource`  
-- Animator: `TOOLKIT.AnimationState`  
-- Navigation: `TOOLKIT.NavigationAgent`  
+- Input: use `IC` = alias for `TOOLKIT.InputController`
+- Physics: `this.transform.physicsBody`
+- Audio: `TOOLKIT.AudioSource`
+- Animator: `TOOLKIT.AnimationState`
+- Navigation: `TOOLKIT.NavigationAgent`
 - Character: `TOOLKIT.CharacterController`
 
 ## 🦯 Toolkit/Unity Mapping
 
-| TOOLKIT Class                | Unity Equivalent                  |
-|------------------------------|-----------------------------------|
-| ScriptComponent              | UnityEngine.Component             |
-| AudioSource                  | UnityEngine.AudioSource           |
-| AnimationState               | UnityEngine.Animator              |
-| NavigationAgent              | UnityEngine.AI.NavMeshAgent       |
-| CharacterController          | UnityEngine.CharacterController   |
-| BABYLON.TransformNode        | UnityEngine.Transform/GameObject  |
+| TOOLKIT Class         | Unity Equivalent                 |
+| --------------------- | -------------------------------- |
+| ScriptComponent       | UnityEngine.Component            |
+| AudioSource           | UnityEngine.AudioSource          |
+| AnimationState        | UnityEngine.Animator             |
+| NavigationAgent       | UnityEngine.AI.NavMeshAgent      |
+| CharacterController   | UnityEngine.CharacterController  |
+| BABYLON.TransformNode | UnityEngine.Transform/GameObject |
 
 - Always use `TOOLKIT.` prefix for toolkit classes
 - Map Unity classes to `babylon toolkit` classes

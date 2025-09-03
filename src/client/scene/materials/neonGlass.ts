@@ -3,7 +3,7 @@ import type { Scene } from "@babylonjs/core/scene";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { FresnelParameters } from "@babylonjs/core/Materials/fresnelParameters";
 import { Constants } from "@babylonjs/core/Engines/constants";
-import { Color3 } from "@babylonjs/core/Maths/math.color";
+import type { Color3 } from "@babylonjs/core/Maths/math.color";
 
 export function makeNeonGlass(
   scene: Scene,

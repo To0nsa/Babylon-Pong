@@ -5,8 +5,16 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Pong Dev</title>
     <style>
-      html, body { height: 100%; margin: 0; }
-      #pong { display: block; width: 100vw; height: 100vh; }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      #pong {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
     </style>
   </head>
   <body>
@@ -38,7 +46,9 @@
           </div>`;
         box.appendChild(card);
         document.body.appendChild(box);
-        document.getElementById("pong-overlay-dismiss")?.addEventListener("click", () => box.remove());
+        document
+          .getElementById("pong-overlay-dismiss")
+          ?.addEventListener("click", () => box.remove());
       }
 
       // ——— 2) Global safety nets ———
@@ -47,13 +57,17 @@
         // Let devtools & Vite overlay still see it:
         console.error("[Pong] Uncaught error:", e.error || e.message, e);
         // Show a compact message to users (avoid leaking stack details in prod if you prefer)
-        showErrorOverlay(String(e.error?.message || e.message || "Unexpected error"));
+        showErrorOverlay(
+          String(e.error?.message || e.message || "Unexpected error"),
+        );
       });
 
       // Unhandled Promise rejections
       window.addEventListener("unhandledrejection", (e) => {
         console.error("[Pong] Unhandled rejection:", e.reason, e);
-        showErrorOverlay(String(e.reason?.message || e.reason || "Unexpected async error"));
+        showErrorOverlay(
+          String(e.reason?.message || e.reason || "Unexpected async error"),
+        );
       });
 
       // ——— 3) Defensive initialization ———
@@ -75,4 +89,3 @@
     </script>
   </body>
 </html>
-

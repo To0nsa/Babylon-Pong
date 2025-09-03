@@ -2,7 +2,7 @@
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { Constants } from "@babylonjs/core/Engines/constants";
-import { Color3 } from "@babylonjs/core/Maths/math";
+import type { Color3 } from "@babylonjs/core/Maths/math";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import type { FXContext } from "./context";
 import { easeOutQuad } from "./fxUtils";
@@ -48,7 +48,7 @@ export function createServeSelectionFX(
     );
     m.position.copyFromFloats(px, y, 0);
     m.isPickable = false;
-    m.parent = tableTop.parent as any;
+    m.parent = tableTop.parent;
     return m;
   };
 

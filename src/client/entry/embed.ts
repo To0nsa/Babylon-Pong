@@ -189,7 +189,7 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
     start() {
       // Pre-roll: run the flicker before letting physics advance.
       // Hide ball robustly (twice) so we can unhide in stages.
-      import("../FX/fxUtils").then(({ incHide }) => {
+      void import("../FX/fxUtils").then(({ incHide }) => {
         incHide(ball.mesh);
         incHide(ball.mesh);
       });

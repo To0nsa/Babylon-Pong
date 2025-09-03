@@ -14,7 +14,7 @@ export function createMatchController(
 ) {
   let game = addRulesToState(createInitialState(bounds, initialServer), rules);
   let currentGameIndex = 1;
-  let gamesWon = { east: 0, west: 0 };
+  const gamesWon = { east: 0, west: 0 };
   let matchWinner: TableEnd | undefined;
   let endsFlippedThisGame = false;
   let midSwapDoneThisGame = false;
