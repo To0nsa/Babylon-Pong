@@ -32,7 +32,15 @@ import { applyFrameEvents } from "./eventsToFX";
 import { tableTennisRules } from "../../game/rules/presets";
 import { createMatchController } from "../../game/match/controller";
 
+import { pickInitialServer, type MatchSeed } from "../../shared/utils/rng";
+
 Logger.setLevel("debug");
+
+function localMatchSeed(): MatchSeed {
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  return buf[0] >>> 0;
+}
 
 export function createPong(canvas: HTMLCanvasElement): PongInstance {
   canvas.tabIndex = 1;
@@ -72,9 +80,6 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
   );
   Bounces.scheduleServe(1);
 
-  // Headless state (start in rally for a quick preview; you can switch to pure serve boot)
-  let state = bootAsRally(createInitialState(bounds));
-
   // ruleset + match controller (best-of-5 by default)
   const RULES = tableTennisRules({
     match: {
@@ -84,11 +89,13 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
       alternateInitialServerEachGame: true,
     },
   });
-  const match = createMatchController(
-    bounds,
-    RULES,
-    /* initial server */ "east",
-  );
+
+  const matchSeed = localMatchSeed();
+  const initialServer = pickInitialServer(matchSeed);
+  const match = createMatchController(bounds, RULES, initialServer);
+
+  // Headless state (start in rally for a quick preview; you can switch to pure serve boot)
+  let state = bootAsRally(createInitialState(bounds, initialServer));
 
   // Input
   const detachInput = attachLocalInput(canvas);

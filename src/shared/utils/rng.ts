@@ -1,4 +1,6 @@
 // src/shared/utils/rng.ts
+import type { TableEnd } from "../types";
+
 export interface RandomSource {
   next(): number; // [0, 1)
   getSeed(): number;
@@ -44,4 +46,11 @@ export function deriveSeed(...parts: number[]): number {
 /** Quick "random" seed using time + Math.random (non-deterministic). */
 export function randomSeed(): number {
   return (Date.now() ^ (Math.random() * 0xffffffff)) >>> 0;
+}
+
+export type MatchSeed = number;
+
+export function pickInitialServer(seed: MatchSeed): TableEnd {
+  // Any unbiased 1-bit decision is fine; using low bit keeps it deterministic.
+  return (seed & 1) === 0 ? "east" : "west";
 }

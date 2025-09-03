@@ -12,7 +12,7 @@ export function createMatchController(
   rules: Ruleset,
   initialServer: TableEnd = "east",
 ) {
-  let game = addRulesToState(createInitialState(bounds), rules, initialServer);
+  let game = addRulesToState(createInitialState(bounds, initialServer), rules);
   let currentGameIndex = 1;
   let gamesWon = { east: 0, west: 0 };
   let matchWinner: TableEnd | undefined;
@@ -23,11 +23,9 @@ export function createMatchController(
   function addRulesToState(
     s: GameState,
     r: Ruleset,
-    server: TableEnd,
   ): GameState {
     return {
       ...s,
-      server,
       serviceTurnsLeft: r.game.servesPerTurn,
       params: {
         ...s.params,
@@ -102,9 +100,8 @@ export function createMatchController(
 
       // Fresh game state + immediately arm the opening serve so the ball has velocity
       const fresh = addRulesToState(
-        createInitialState(game.bounds),
+        createInitialState(game.bounds, nextInitialServer),
         rules,
-        nextInitialServer,
       );
       game = serveFrom(nextInitialServer, fresh);
 

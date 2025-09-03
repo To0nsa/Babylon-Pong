@@ -97,7 +97,7 @@ export type GameState = {
   };
 };
 
-export function createInitialState(bounds: GameState["bounds"]): GameState {
+export function createInitialState(bounds: GameState["bounds"], initialServer: TableEnd): GameState {
   // ——— Table-tennis defaults ———
   const targetScore = 11;
   const winBy = 2;
@@ -118,10 +118,10 @@ export function createInitialState(bounds: GameState["bounds"]): GameState {
     games: { east: 0, west: 0 },
 
     // Boot with east serving first (and 2 serves in this block)
-    phase: "serveEast",
+    phase: initialServer === "east" ? "serveEast" : "serveWest",
     tPauseBtwPointsMs: PAUSE_BETWEEN_POINTS_MS,
     nextServe: undefined,
-    server: "east",
+    server: initialServer,
     serviceTurnsLeft: servesPerTurn,
 
     tPauseBtwGamesMs: undefined,
