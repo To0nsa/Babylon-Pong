@@ -11,7 +11,7 @@ export function createRenderLoop(
 
   const frame = () => {
     // Guard against teardown races
-    const e = engine as (Engine & { isDisposed?: boolean });
+    const e = engine as Engine & { isDisposed?: boolean };
     if (e.isDisposed === true || scene.isDisposed) return;
     preRender?.();
     scene.render();

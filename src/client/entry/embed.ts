@@ -157,8 +157,13 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
         });
       }
 
-      // 5) HUD
-      updateHUD(hud, state, names);
+      // 5) HUD (names + match snapshot -> games strip)
+      const snap = match.getSnapshot();
+      updateHUD(hud, state, names, {
+        bestOf: snap.bestOf,
+        currentGameIndex: snap.currentGameIndex,
+        gamesHistory: snap.gamesHistory ?? [],
+      });
 
       // 6) Visual bounce Y + project meshes
       const ballY = Bounces.update(state.ball.x, state.ball.vx);

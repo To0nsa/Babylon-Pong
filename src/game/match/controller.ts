@@ -20,6 +20,14 @@ export function createMatchController(
   let midSwapDoneThisGame = false;
   let initialServerThisGame: TableEnd = initialServer;
 
+  // NEW: contiguous game history to drive HUD game boxes
+  const gamesHistory: Array<{
+    gameIndex: number;
+    east: number;
+    west: number;
+    winner: TableEnd;
+  }> = [];
+
   function addRulesToState(s: GameState, r: Ruleset): GameState {
     return {
       ...s,
@@ -44,6 +52,8 @@ export function createMatchController(
       endsFlippedThisGame,
       midSwapDoneThisGame,
       initialServerThisGame,
+      // NEW: expose immutable copy for UI
+      gamesHistory: [...gamesHistory],
     };
   }
 
@@ -107,6 +117,16 @@ export function createMatchController(
 
     // Reached gameOver this frame? Record & start the proper pause.
     if (game.phase === "gameOver" && game.gameWinner) {
+      // NEW: record final score for this game once
+      if (!gamesHistory.some((g) => g.gameIndex === currentGameIndex)) {
+        gamesHistory.push({
+          gameIndex: currentGameIndex,
+          east: game.points.east,
+          west: game.points.west,
+          winner: game.gameWinner,
+        });
+      }
+
       // Record game win once (we flip phase immediately below so it won't repeat)
       gamesWon[game.gameWinner]++;
       events.gameOver = {

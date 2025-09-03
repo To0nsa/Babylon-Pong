@@ -1,12 +1,24 @@
 // src/client/ui/Scoreboard.ts
 export type ServerSide = "left" | "right";
 
+export type GameHistoryEntry = {
+  gameIndex: number;
+  east: number;
+  west: number;
+  winner: "east" | "west";
+};
+
 export type DomScoreboardAPI = {
   setPoints: (left: number, right: number) => void;
-  setServer: (side: ServerSide) => void;
+  setServer: (side: ServerSide) => void; // blue orb left of the name
   setDeuce: (flag: boolean) => void;
   setPlayerNames: (left: string, right: string) => void;
-  attachToCanvas: (canvas: HTMLCanvasElement) => void; // rebind overlay to canvas bounds
+  setGames: (
+    history: GameHistoryEntry[],
+    bestOf: number,
+    currentGameIndex?: number,
+  ) => void;
+  attachToCanvas: (canvas: HTMLCanvasElement) => void;
   dispose: () => void;
 };
 
@@ -21,31 +33,13 @@ function createEl<K extends keyof HTMLElementTagNameMap>(
   return el;
 }
 
-function injectStylesOnce() {
-  if (document.getElementById("pong-hud-styles")) return;
-  const css = `
-  @keyframes score-pop   { 0% { transform: translateZ(0) scale(1); } 40% { transform: translateZ(0) scale(1.25); } 100% { transform: translateZ(0) scale(1); } }
-  @keyframes score-flip  { 0% { transform: rotateX(0); } 50% { transform: rotateX(90deg); } 100% { transform: rotateX(0); } }
-  .score-pop { animation: score-pop .35s ease-out; }
-  .score-flip { animation: score-flip .35s ease-in; transform-style: preserve-3d; perspective: 800px; }
-  `;
-  const style = document.createElement("style");
-  style.id = "pong-hud-styles";
-  style.textContent = css;
-  document.head.appendChild(style);
-}
-
 /**
- * Minimal DOM/Tailwind scoreboard HUD
- * - Only score flip/pop is animated.
- * - Gradient outer frame (cyan → sky → fuchsia), simple glass inner card.
- * - If #pong-hud-root exists, it uses it; otherwise creates a fixed root.
- * - Call `attachToCanvas(canvas)` so the HUD follows a non-fullscreen canvas.
+ * Names panel (glass only, no gradient) wraps: [serve orb | Name]
+ * Right column shows contiguous game boxes aligned with each row.
+ * The names panel width adapts to the longest current name (clamped 8..16ch).
  */
 export function createScoreboard(): DomScoreboardAPI {
-  injectStylesOnce();
 
-  // Root spanning viewport (clips to canvas via overlay rect)
   const existingRoot = document.getElementById(
     "pong-hud-root",
   ) as HTMLDivElement | null;
@@ -53,145 +47,231 @@ export function createScoreboard(): DomScoreboardAPI {
     existingRoot ?? createEl("div", "pointer-events-none fixed inset-0 z-50");
   if (!existingRoot) document.body.appendChild(root);
 
-  // Movable overlay matching canvas bounds
+  // Overlay that tracks the canvas rect
   const overlay = createEl("div", "pointer-events-none absolute inset-0");
   root.appendChild(overlay);
 
-  // ====== Gradient Frame (outer) + Glass Card (inner)
-  const outer = createEl(
+  // ===== OUTER WRAP: 2-column grid
+  // Left column width must hug content → max-content (this removes the “full-width bar” effect)
+  const wrap = createEl(
     "div",
-    [
-      "relative mx-auto mt-4 w-[64%] max-w-[1120px] min-w-[420px]",
-      "rounded-3xl p-[2px]",
-      "bg-gradient-to-r from-cyan-300/70 via-sky-400/60 to-fuchsia-400/70",
-      "shadow-[0_0_0_1px_rgba(110,205,255,0.18),0_12px_40px_rgba(0,0,0,0.45)]",
-    ].join(" "),
+    "relative mx-auto mt-3 grid items-center gap-x-3 w-fit",
   );
+  // Explicitly define columns: [max-content | auto]
+  (wrap.style as any).gridTemplateColumns = "max-content auto";
+  overlay.appendChild(wrap);
 
-  const glass = createEl(
+  // ===== LEFT NAMES PANEL (GLASS ONLY — NO GRADIENT)
+  const panel = createEl(
     "div",
     [
-      "rounded-[calc(theme(borderRadius.3xl)-2px)]",
-      "border border-white/10",
+      "row-span-2",
+      "rounded-xl",
+      "border border-white/12",
       "bg-slate-900/60 backdrop-blur-md",
-      "px-4",
+      "px-2 py-1", // PANEL_PAD_X = 8px
+      "shadow-[0_8px_24px_rgba(0,0,0,0.38)]",
     ].join(" "),
   );
-  outer.appendChild(glass);
+  wrap.appendChild(panel);
 
-  // ====== Grid content
-  // Layout: [name (1fr) | score (90) | center divider | score (90) | name (1fr)]
-  const grid = createEl(
+  // One name row inside panel
+  function makeNameRow() {
+  const row = createEl("div", "grid items-center gap-x-2 h-10");
+  row.style.gridTemplateColumns = "18px max-content";
+
+    const orb = createEl(
+      "div",
+      [
+        "w-[14px] h-[14px] rounded-full",
+        "border border-white/20",
+        "bg-white/12",
+        "shadow-[0_0_0_1px_rgba(255,255,255,.06)]",
+      ].join(" "),
+    );
+
+  const name = createEl(
     "div",
-    "grid grid-cols-[1fr_90px_32px_90px_1fr] items-center h-[82px]",
+    [
+      "whitespace-nowrap",           // keep one line
+      "px-[6px]",
+      "text-[24px]", "md:text-[26px]", "leading-[1.05]",
+      "font-semibold text-slate-100 select-none",
+      // REMOVE: "overflow-hidden", "text-ellipsis", "max-w-full"
+    ].join(" "),
+    "-",
   );
 
-  // Left name
-  const leftWrap = createEl("div", "pl-4 pr-3");
-  const leftName = createEl(
-    "div",
-    "truncate text-[18px] font-semibold text-slate-200/90 tracking-wide select-none",
-    "to0nsa.dev",
-  );
-  leftWrap.appendChild(leftName);
+    row.append(orb, name);
+    return { row, name, orb };
+  }
 
-  // Left score (flip/pop on change)
-  const leftScore = createEl(
-    "div",
-    "text-[42px] font-black text-white text-center select-none will-change-transform",
-    "0",
-  );
+  const names = {
+    east: makeNameRow(),
+    west: makeNameRow(),
+  };
+  panel.appendChild(names.east.row);
 
-  // Center divider + blue orb
-  const center = createEl("div", "relative flex items-center justify-center");
+  // cyan divider
   const divider = createEl(
     "div",
-    "h-[60%] w-[3px] rounded-full bg-gradient-to-b from-cyan-300/80 via-cyan-200/40 to-transparent",
+    "my-1 h-[3px] rounded-full bg-gradient-to-r from-cyan-300/80 via-sky-400/80 to-cyan-300/80 shadow-[0_0_12px_rgba(56,189,248,.35)]",
   );
-  center.appendChild(divider);
+  panel.appendChild(divider);
+  panel.appendChild(names.west.row);
 
-  const orb = createEl(
+  function applyNameColumns() {
+    names.east.row.style.gridTemplateColumns = "18px max-content";
+    names.west.row.style.gridTemplateColumns = "18px max-content";
+  }
+  applyNameColumns();
+
+  // ===== RIGHT COLUMN: score boxes aligned with each row
+  const rightTop = createEl("div", "h-10 flex items-center gap-1 justify-start");
+  const rightBottom = createEl(
     "div",
-    [
-      "absolute w-[10px] h-[10px] rounded-full",
-      "bg-cyan-300/80",
-      "shadow-[0_0_12px_2px_rgba(56,189,248,.55)]",
-      "pointer-events-none",
-    ].join(" "),
+    "h-10 flex items-center gap-1 justify-start",
   );
-  // True center and its own stacking context
-  Object.assign(orb.style, {
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    zIndex: "10",
-    willChange: "transform",
-  } as CSSStyleDeclaration);
-  center.appendChild(orb);
+  wrap.appendChild(rightTop);
+  wrap.appendChild(rightBottom);
 
-  // Right score
-  const rightScore = createEl(
-    "div",
-    "text-[42px] font-black text-white text-center select-none will-change-transform",
-    "0",
-  );
-
-  // Right name
-  const rightWrap = createEl("div", "pr-4 pl-3 text-right");
-  const rightName = createEl(
-    "div",
-    "truncate text-[18px] font-semibold text-slate-200/90 tracking-wide select-none",
-    "to0nsa.dev",
-  );
-  rightWrap.appendChild(rightName);
-
-  // Assemble
-  grid.appendChild(leftWrap);
-  grid.appendChild(leftScore);
-  grid.appendChild(center);
-  grid.appendChild(rightScore);
-  grid.appendChild(rightWrap);
-  glass.appendChild(grid);
-  overlay.appendChild(outer);
-
-  // ===== Optional DEUCE badge (no animation)
+  // Deuce pill (anchored to panel top-right)
   const deuce = createEl(
     "div",
     [
-      "mx-auto mt-3 w-[128px] h-[34px]",
-      "rounded-full border border-cyan-300/50",
-      "bg-cyan-400/15 text-cyan-100",
-      "flex items-center justify-center select-none",
-      "font-extrabold text-[14px] tracking-[0.18em]",
-      "opacity-0", // show/hide instantly
+      "absolute",
+      "px-2 py-[2px] rounded-md",
+      "bg-white/10 text-white/90",
+      "text-[11px] tracking-wider font-semibold uppercase",
+      "border border-white/15 shadow-[0_6px_16px_rgba(0,0,0,.25)]",
+      "transition-opacity",
     ].join(" "),
-    "D  E  U  C  E",
+    "Deuce",
   );
+  deuce.style.opacity = "0";
   overlay.appendChild(deuce);
 
-  // ===== API bits
-  const flipPoint = (el: HTMLElement, value: number) => {
-    const next = String((value | 0) < 0 ? 0 : value | 0);
-    if (el.textContent === next) return;
-    el.classList.remove("score-pop", "score-flip");
-    // force reflow to restart animation
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    (el as any).offsetHeight;
-    el.textContent = next;
-    el.classList.add("score-flip", "score-pop");
+  // ----- live points
+  let lastPoints = { east: 0, west: 0 };
+  const currentBoxEl: { east: HTMLElement | null; west: HTMLElement | null } = {
+    east: null,
+    west: null,
   };
 
+  // boxes
+  function makeBox() {
+    return createEl(
+      "div",
+      [
+        "w-9 h-9",
+        "rounded-md border border-white/10",
+        "grid place-items-center",
+        "bg-white/5 text-white/90",
+        "text-[13px] font-extrabold tabular-nums select-none",
+      ].join(" "),
+    );
+  }
+  function decorateWinner(el: HTMLElement) {
+    el.classList.add(
+      "ring-1",
+      "ring-cyan-300/70",
+      "text-[22px]",
+      "shadow-[0_0_0_1px_rgba(56,189,248,.35),0_0_18px_rgba(56,189,248,.25)]",
+      "bg-white/10",
+    );
+  }
+  function decorateCurrent(el: HTMLElement) {
+    el.classList.add(
+      "ring-1",
+      "ring-white/30",
+      "shadow-[inset_0_0_0_1px_rgba(255,255,255,.05)]",
+      "text-[24px]",
+      "md:text-[26px]",
+      "leading-[0.95]",
+    );
+  }
+
+  function renderBoxesRow(
+    container: HTMLElement,
+    who: "east" | "west",
+    history: GameHistoryEntry[],
+    bestOf: number,
+    currentGameIndex?: number,
+  ) {
+    container.textContent = "";
+    currentBoxEl[who] = null;
+
+    const map = new Map<number, GameHistoryEntry>();
+    for (const h of history) map.set(h.gameIndex, h);
+
+    const lastShown =
+      Math.max(
+        [...map.keys()].reduce((a, b) => Math.max(a, b), 0),
+        currentGameIndex ?? 1,
+      ) || 1;
+
+    for (let i = 1; i <= lastShown; i++) {
+      const slot = makeBox();
+      const entry = map.get(i);
+      if (entry) {
+        slot.textContent = String(who === "east" ? entry.east : entry.west);
+        if (entry.winner === who) decorateWinner(slot);
+        else slot.classList.add("opacity-80");
+      } else if (i === currentGameIndex) {
+        slot.textContent = String(
+          who === "east" ? lastPoints.east : lastPoints.west,
+        );
+        decorateCurrent(slot);
+        currentBoxEl[who] = slot;
+      }
+      container.appendChild(slot);
+    }
+  }
+
+  // API setters
   const setPoints = (l: number, r: number) => {
-    flipPoint(leftScore, l);
-    flipPoint(rightScore, r);
+    lastPoints = { east: l | 0, west: r | 0 };
+    if (currentBoxEl.east) {
+      const el = currentBoxEl.east;
+      if (el.textContent !== String(lastPoints.east)) {
+        el.classList.remove("score-flip");
+        void el.offsetWidth;
+        el.textContent = String(lastPoints.east);
+        el.classList.add("score-flip");
+      }
+    }
+    if (currentBoxEl.west) {
+      const el = currentBoxEl.west;
+      if (el.textContent !== String(lastPoints.west)) {
+        el.classList.remove("score-flip");
+        void el.offsetWidth;
+        el.textContent = String(lastPoints.west);
+        el.classList.add("score-flip");
+      }
+    }
   };
 
-  // Serving highlight (static ring on the serving player's name)
-  const ringClasses = ["ring-2", "ring-cyan-400/60", "rounded-md"];
+  // Blue serve orb (no box glow around row)
   const setServer = (side: ServerSide) => {
-    leftWrap.classList.remove(...ringClasses);
-    rightWrap.classList.remove(...ringClasses);
-    (side === "left" ? leftWrap : rightWrap).classList.add(...ringClasses);
+    const active = side === "left" ? "east" : "west";
+    const passive = side === "left" ? "west" : "east";
+
+    const on = names[active].orb;
+    const off = names[passive].orb;
+
+    on.classList.add(
+      "bg-cyan-300",
+      "shadow-[0_0_10px_rgba(56,189,248,.85),0_0_2px_rgba(56,189,248,.9)]",
+      "border-cyan-300/70",
+    );
+    on.classList.remove("bg-white/12", "border-white/20");
+
+    off.classList.remove(
+      "bg-cyan-300",
+      "shadow-[0_0_10px_rgba(56,189,248,.85),0_0_2px_rgba(56,189,248,.9)]",
+      "border-cyan-300/70",
+    );
+    off.classList.add("bg-white/12", "border-white/20");
   };
 
   const setDeuce = (flag: boolean) => {
@@ -199,14 +279,32 @@ export function createScoreboard(): DomScoreboardAPI {
   };
 
   const setPlayerNames = (l: string, r: string) => {
-    leftName.textContent = l;
-    rightName.textContent = r;
-    leftName.setAttribute("title", l);
-    rightName.setAttribute("title", r);
+    names.east.name.textContent = l;
+    names.west.name.textContent = r;
+    names.east.name.setAttribute("title", l);
+    names.west.name.setAttribute("title", r);
+
+    applyNameColumns(); // sizes to the longest name automatically
+
+    const rect = panel.getBoundingClientRect();
+    deuce.style.left = rect.right - 8 + "px";
+    deuce.style.top  = rect.top + 6 + "px";
   };
 
-  // Position overlay to match canvas bounds (if canvas is not fullscreen)
+  const setGames = (
+    history: GameHistoryEntry[],
+    bestOf: number,
+    cgIndex?: number,
+  ) => {
+    renderBoxesRow(rightTop, "east", history, bestOf, cgIndex);
+    renderBoxesRow(rightBottom, "west", history, bestOf, cgIndex);
+    setPoints(lastPoints.east, lastPoints.west);
+  };
+
+  // Canvas anchoring (with ResizeObserver)
   let boundCanvas: HTMLCanvasElement | null = null;
+  let ro: ResizeObserver | null = null;
+
   const syncOverlay = () => {
     if (!boundCanvas) return;
     const rect = boundCanvas.getBoundingClientRect();
@@ -214,11 +312,18 @@ export function createScoreboard(): DomScoreboardAPI {
     overlay.style.top = rect.top + "px";
     overlay.style.width = rect.width + "px";
     overlay.style.height = rect.height + "px";
+
+    const p = panel.getBoundingClientRect();
+    deuce.style.left = p.right - 8 + "px";
+    deuce.style.top = p.top + 6 + "px";
   };
 
   const attachToCanvas = (canvas: HTMLCanvasElement) => {
     boundCanvas = canvas;
     syncOverlay();
+    if (ro) ro.disconnect();
+    ro = new ResizeObserver(() => syncOverlay());
+    ro.observe(canvas);
   };
 
   const onResize = () => syncOverlay();
@@ -228,6 +333,7 @@ export function createScoreboard(): DomScoreboardAPI {
   const dispose = () => {
     window.removeEventListener("resize", onResize);
     window.removeEventListener("scroll", onResize);
+    if (ro) ro.disconnect();
     root.contains(overlay) && root.removeChild(overlay);
     if (!existingRoot && root.parentElement)
       root.parentElement.removeChild(root);
@@ -238,6 +344,7 @@ export function createScoreboard(): DomScoreboardAPI {
     setServer,
     setDeuce,
     setPlayerNames,
+    setGames,
     attachToCanvas,
     dispose,
   };

@@ -20,7 +20,9 @@ function getFXMeta(mesh: AbstractMesh): FXMeta {
 }
 
 export function ensureGlow(scene: Scene): GlowLayer {
-  const found = scene.effectLayers?.find((l) => l.name === "fx-glow") as GlowLayer | undefined;
+  const found = scene.effectLayers?.find((l) => l.name === "fx-glow") as
+    | GlowLayer
+    | undefined;
   if (found) return found;
   const glow = new GlowLayer("fx-glow", scene, { mainTextureSamples: 1 });
   glow.intensity = 0.9;
