@@ -5,7 +5,6 @@ import type { PongInstance } from "./types";
 import Logger from "../../shared/utils/Logger";
 
 import { createInitialState } from "../../game";
-import { bootAsRally } from "../../game";
 import { stepPaddles } from "../../game";
 import { handleSteps } from "../../game";
 
@@ -33,6 +32,7 @@ import { tableTennisRules } from "../../game/rules/presets";
 import { createMatchController } from "../../game/match/controller";
 
 import { pickInitialServer, type MatchSeed } from "../../shared/utils/rng";
+import { serveFrom } from "../../game/systems/flow";
 
 Logger.setLevel("debug");
 
@@ -44,6 +44,8 @@ function localMatchSeed(): MatchSeed {
 
 export function createPong(canvas: HTMLCanvasElement): PongInstance {
   canvas.tabIndex = 1;
+
+  const matchSeed = localMatchSeed();
 
   const { engine, engineDisposable } = createEngine(canvas);
   const world = createWorld(engine);
@@ -67,6 +69,7 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
     wallZSouth: -zMax,
     ballMesh: ball.mesh,
     ballRadius: bounds.ballRadius,
+    tableTop: table.tableTop,
   });
 
   // Visual bounce helper
@@ -78,7 +81,6 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
     left.mesh,
     right.mesh,
   );
-  Bounces.scheduleServe(1);
 
   // ruleset + match controller (best-of-5 by default)
   const RULES = tableTennisRules({
@@ -90,12 +92,11 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
     },
   });
 
-  const matchSeed = localMatchSeed();
   const initialServer = pickInitialServer(matchSeed);
   const match = createMatchController(bounds, RULES, initialServer);
 
-  // Headless state (start in rally for a quick preview; you can switch to pure serve boot)
-  let state = bootAsRally(createInitialState(bounds, initialServer));
+  // Headless state (boot aligned to chosen initial server)
+  let state = createInitialState(bounds, initialServer);
 
   // Input
   const detachInput = attachLocalInput(canvas);
@@ -104,15 +105,21 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
   // Tiny animator gate
   const paddleAnim = createPaddleAnimator(scene, left.mesh, right.mesh);
 
-  const { start, stop } = createLifecycle(engine, scene, {
+  // Intro gate
+  let introUntil = 0; // wall-clock ms until which logic is gated
+  const loop = createLifecycle(engine, scene, {
     logicHz: 60,
     update: (dtMs) => {
+      if (performance.now() < introUntil) {
+        // Skip physics while the flicker runs; render still updates via Lifecycle.
+        return;
+      }
       const dt = Math.min(0.05, dtMs / 1000);
 
       // 1) Input → paddles
       state = stepPaddles(state, readIntent(), dt);
 
-      // 2) Rally
+      // 2) Rally / pauses / serve
       const prevPhase = state.phase;
       const stepped = handleSteps(state, dt);
 
@@ -171,10 +178,46 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
   });
 
   const destroy = () => {
-    stop();
+    loop.stop();
     scene.dispose();
     engineDisposable.dispose();
   };
 
-  return { start, destroy };
+  return {
+    start() {
+      // Pre-roll: run the flicker before letting physics advance.
+      // Hide ball robustly (twice) so we can unhide in stages.
+      import("../FX/fxUtils").then(({ incHide }) => {
+        incHide(ball.mesh);
+        incHide(ball.mesh);
+      });
+
+      // Avoid user moving paddles during pre-roll.
+      blockInputFor(2200);
+      introUntil = performance.now() + 2000;
+
+      // Begin rendering immediately so the effect is visible.
+      loop.start();
+
+      // Play the intro flicker async; when it ends, arm the opening serve.
+      void fx
+        .serveSelection(initialServer, 2000)
+        .then(async () => {
+          // Give the ball velocity + correct serve phase
+          state = serveFrom(initialServer, state);
+          // No extra pause after the intro
+          state = { ...state, tPauseBtwPointsMs: 0 };
+
+          // Schedule matching visual bounce path for the chosen side
+          const dir = initialServer === "east" ? -1 : 1;
+          Bounces.scheduleServe(dir);
+
+          // Fully unhide (we hid twice)
+          const { decHide } = await import("../FX");
+          decHide(ball.mesh);
+          decHide(ball.mesh);
+        });
+    },
+    destroy,
+  };
 }

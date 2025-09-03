@@ -3,16 +3,19 @@ import type { Scene } from "@babylonjs/core/scene";
 import type { Vector3 } from "@babylonjs/core/Maths/math";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import type { WallSide } from "../../shared/types";
+import type { TableEnd } from "../../shared/types";
 
 import { createFXContext, type FXContext } from "./context";
 import { createForceFieldFX } from "./ForceField";
 import { createGlowBurstFX } from "./Burst";
+import { createServeSelectionFX } from "./ServeSelect";
 
 export type FXManagerOptions = {
   wallZNorth: number;
   wallZSouth: number;
   ballMesh: AbstractMesh;
   ballRadius: number;
+  tableTop: AbstractMesh;
 };
 
 /**
@@ -25,6 +28,7 @@ export class FXManager {
   // Concrete effect instances
   private forceField: ReturnType<typeof createForceFieldFX>;
   private burst: ReturnType<typeof createGlowBurstFX>;
+  private serveSelect: ReturnType<typeof createServeSelectionFX>;
 
   constructor(scene: Scene, opts: FXManagerOptions) {
     this.ctx = createFXContext(scene);
@@ -42,6 +46,8 @@ export class FXManager {
       durations: { flash: 312, ring: 432, spark: 504 },
       sparkCount: 6,
     });
+
+    this.serveSelect = createServeSelectionFX(this.ctx, opts.tableTop);
   }
 
   /** Show a wall pulse (“force field”) on top/bottom at (x,y). */
@@ -57,6 +63,10 @@ export class FXManager {
   /** Convenience for vector positions. */
   burstAtV3(p: Vector3) {
     this.burst.trigger(p.x, p.y, p.z);
+  }
+
+  async serveSelection(end: TableEnd, ms = 2000): Promise<void> {
+    await this.serveSelect.trigger(end, ms);
   }
 
   /**
@@ -75,6 +85,7 @@ export class FXManager {
   dispose() {
     this.forceField?.dispose?.();
     this.burst?.dispose?.();
+    this.serveSelect?.dispose?.();
     // add per-frame hooks or pools, clean up here too
   }
 }
