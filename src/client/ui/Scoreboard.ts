@@ -3,7 +3,7 @@ export type ServerSide = "left" | "right";
 
 export type DomScoreboardAPI = {
   setPoints: (left: number, right: number) => void;
-  setServer: (side: ServerSide) => void;
+  setServer: (side: ServerSide) => void;  
   setDeuce: (flag: boolean) => void;
   setPlayerNames: (left: string, right: string) => void;
   attachToCanvas: (canvas: HTMLCanvasElement) => void; // rebind overlay to canvas bounds

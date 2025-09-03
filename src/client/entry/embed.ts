@@ -49,7 +49,6 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
   const hud = createScoreboard();
   hud.attachToCanvas(canvas);
   let names = { east: "Magenta", west: "Green" };
-  const HUD_MIRRORED = false;
 
   // Bounds once (render → headless)
   const { bounds, zMax } = computeBounds(world);
@@ -143,7 +142,7 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
       }
 
       // 5) HUD
-      updateHUD(hud, state, { mirrored: HUD_MIRRORED, names });
+      updateHUD(hud, state, names);
 
       // 6) Visual bounce Y + project meshes
       const ballY = Bounces.update(state.ball.x, state.ball.vx);
