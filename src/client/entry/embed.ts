@@ -1,42 +1,43 @@
 // src/client/entry/embed.ts
-import { createEngine, createLifecycle } from "../engine";
-import { createWorld } from "../scene";
-import type { PongInstance } from "./types";
-import Logger from "../../shared/utils/Logger";
+import { createEngine } from "@client/engine/engine";
+import { createLifecycle } from "@client/engine/lifecycle";
+import { createWorld } from "@client/scene/scene";
+import Logger from "@shared/utils/logger";
 
-import { createInitialState } from "../../game";
-import { stepPaddles } from "../../game";
-import { handleSteps } from "../../game";
+import { createInitialState } from "@game/model/state";
+import { stepPaddles } from "@game/systems/control/paddle";
+import { handleSteps } from "@game/systems/flow/phases";
 
-import {
-  attachLocalInput,
-  readIntent,
-  blockInputFor,
-  toggleControlsMirrored,
-} from "../input";
-import { createBounces } from "../visuals";
+import { attachLocalInput, readIntent } from "@client/input/aggregate";
+import { toggleControlsMirrored, blockInputFor } from "@client/input/aggregate";
+import { createBounces } from "@client/visuals/bounce/bounces";
 
-import { FXManager } from "../FX/manager";
+import { FXManager } from "@client/fx/manager";
 
-import { createScoreboard } from "../ui";
-import "../ui/theme.css";
-import "./babylon.sidefx";
+import { createScoreboard } from "@client/ui/scoreboard";
+import "@client/ui/tailwind.css";
+import "./babylon-register";
 
 import { computeBounds } from "./bounds";
-import { createPaddleAnimator } from "../visuals";
-import { detectEnteredServe, onEnteredServe } from "./serveCue";
-import { updateHUD } from "../ui/hudBinding";
-import { applyFrameEvents } from "./eventsToFX";
+import { createPaddleAnimator } from "@client/visuals/animate-paddle";
+import { detectEnteredServe, onEnteredServe } from "./serve-cue";
+import { updateHUD } from "@client/ui/hud-binding";
+import { applyFrameEvents } from "./events-to-fx";
 
-import { tableTennisRules } from "../../game/rules/presets";
-import { createMatchController } from "../../game/match/controller";
+import { tableTennisRules } from "@game/rules/presets";
+import { createMatchController } from "@game/match/controller";
 
-import { pickInitialServer, type MatchSeed } from "../../shared/utils/rng";
-import { serveFrom } from "../../game/systems/flow";
+import { pickInitialServer, type MatchSeed } from "@shared/utils/rng";
+import { serveFrom } from "@game/systems/flow/service";
 
-import { SERVE_SELECT_TOTAL_MS } from "../../game/constants";
-import type { TableEnd } from "../../shared/types";
-import type { GameState } from "../../game/model/state";
+import { SERVE_SELECT_TOTAL_MS } from "@shared/domain/timing";
+import type { TableEnd } from "@shared/domain/ids";
+import type { GameState } from "@game/model/state";
+
+interface PongInstance {
+  start(): void;
+  destroy(): void;
+}
 
 Logger.setLevel("debug");
 
@@ -235,7 +236,7 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
     start() {
       // Pre-roll: run the flicker before letting physics advance.
       // Hide ball robustly (twice) so we can unhide in stages.
-      void import("../FX/fxUtils").then(({ incHide }) => {
+      void import("@client/fx/utils").then(({ incHide }) => {
         incHide(ball.mesh);
         incHide(ball.mesh);
       });
@@ -259,7 +260,7 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
         Bounces.scheduleServe(dir);
 
         // Fully unhide (we hid twice)
-        const { decHide } = await import("../FX");
+        const { decHide } = await import("@client/fx/utils");
         decHide(ball.mesh);
         decHide(ball.mesh);
       });
