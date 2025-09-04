@@ -1,5 +1,5 @@
 // src/client/ui/Scoreboard.ts
-export type ServerSide = "left" | "right";
+import type { TableEnd } from "../../shared/types";
 
 export type GameHistoryEntry = {
   gameIndex: number;
@@ -9,10 +9,10 @@ export type GameHistoryEntry = {
 };
 
 export type DomScoreboardAPI = {
-  setPoints: (left: number, right: number) => void;
-  setServer: (side: ServerSide) => void; // blue orb left of the name
+  setPoints: (east: number, west: number) => void;
+  setServer: (end: TableEnd) => void; // blue orb left of the name
   setDeuce: (flag: boolean) => void;
-  setPlayerNames: (left: string, right: string) => void;
+  setPlayerNames: (eastName: string, westName: string) => void;
   setGames: (
     history: GameHistoryEntry[],
     bestOf: number,
@@ -37,9 +37,12 @@ function createEl<K extends keyof HTMLElementTagNameMap>(
  * Names panel (glass only, no gradient) wraps: [serve orb | Name]
  * Right column shows contiguous game boxes aligned with each row.
  * The names panel width adapts to the longest current name (clamped 8..16ch).
+ *
+ * Row mapping is explicit and fixed:
+ *  - east → top row
+ *  - west → bottom row
  */
 export function createScoreboard(): DomScoreboardAPI {
-
   const existingRoot = document.getElementById(
     "pong-hud-root",
   ) as HTMLDivElement | null;
@@ -58,7 +61,7 @@ export function createScoreboard(): DomScoreboardAPI {
     "relative mx-auto mt-3 grid items-center gap-x-3 w-fit",
   );
   // Explicitly define columns: [max-content | auto]
-  (wrap.style as any).gridTemplateColumns = "max-content auto";
+  (wrap.style).gridTemplateColumns = "max-content auto";
   overlay.appendChild(wrap);
 
   // ===== LEFT NAMES PANEL (GLASS ONLY — NO GRADIENT)
@@ -77,8 +80,8 @@ export function createScoreboard(): DomScoreboardAPI {
 
   // One name row inside panel
   function makeNameRow() {
-  const row = createEl("div", "grid items-center gap-x-2 h-10");
-  row.style.gridTemplateColumns = "18px max-content";
+    const row = createEl("div", "grid items-center gap-x-2 h-10");
+    row.style.gridTemplateColumns = "18px max-content";
 
     const orb = createEl(
       "div",
@@ -90,17 +93,19 @@ export function createScoreboard(): DomScoreboardAPI {
       ].join(" "),
     );
 
-  const name = createEl(
-    "div",
-    [
-      "whitespace-nowrap",           // keep one line
-      "px-[6px]",
-      "text-[24px]", "md:text-[26px]", "leading-[1.05]",
-      "font-semibold text-slate-100 select-none",
-      // REMOVE: "overflow-hidden", "text-ellipsis", "max-w-full"
-    ].join(" "),
-    "-",
-  );
+    const name = createEl(
+      "div",
+      [
+        "whitespace-nowrap", // keep one line
+        "px-[6px]",
+        "text-[24px]",
+        "md:text-[26px]",
+        "leading-[1.05]",
+        "font-semibold text-slate-100 select-none",
+        // intentionally no overflow clamp: panel expands to longest name
+      ].join(" "),
+      "-",
+    );
 
     row.append(orb, name);
     return { row, name, orb };
@@ -127,7 +132,10 @@ export function createScoreboard(): DomScoreboardAPI {
   applyNameColumns();
 
   // ===== RIGHT COLUMN: score boxes aligned with each row
-  const rightTop = createEl("div", "h-10 flex items-center gap-1 justify-start");
+  const rightTop = createEl(
+    "div",
+    "h-10 flex items-center gap-1 justify-start",
+  );
   const rightBottom = createEl(
     "div",
     "h-10 flex items-center gap-1 justify-start",
@@ -135,11 +143,13 @@ export function createScoreboard(): DomScoreboardAPI {
   wrap.appendChild(rightTop);
   wrap.appendChild(rightBottom);
 
-  // Deuce pill (anchored to panel top-right)
+  // Deuce pill (centered under the scoreboard)
   const deuce = createEl(
     "div",
     [
-      "absolute",
+      "col-span-2",
+      "justify-self-center",
+      "mt-1",
       "px-2 py-[2px] rounded-md",
       "bg-white/10 text-white/90",
       "text-[11px] tracking-wider font-semibold uppercase",
@@ -149,7 +159,7 @@ export function createScoreboard(): DomScoreboardAPI {
     "Deuce",
   );
   deuce.style.opacity = "0";
-  overlay.appendChild(deuce);
+  wrap.appendChild(deuce);
 
   // ----- live points
   let lastPoints = { east: 0, west: 0 };
@@ -175,7 +185,7 @@ export function createScoreboard(): DomScoreboardAPI {
     el.classList.add(
       "ring-1",
       "ring-cyan-300/70",
-      "text-[22px]",
+      "text-[16px]",
       "shadow-[0_0_0_1px_rgba(56,189,248,.35),0_0_18px_rgba(56,189,248,.25)]",
       "bg-white/10",
     );
@@ -229,8 +239,8 @@ export function createScoreboard(): DomScoreboardAPI {
   }
 
   // API setters
-  const setPoints = (l: number, r: number) => {
-    lastPoints = { east: l | 0, west: r | 0 };
+  const setPoints = (east: number, west: number) => {
+    lastPoints = { east: east | 0, west: west | 0 };
     if (currentBoxEl.east) {
       const el = currentBoxEl.east;
       if (el.textContent !== String(lastPoints.east)) {
@@ -252,9 +262,9 @@ export function createScoreboard(): DomScoreboardAPI {
   };
 
   // Blue serve orb (no box glow around row)
-  const setServer = (side: ServerSide) => {
-    const active = side === "left" ? "east" : "west";
-    const passive = side === "left" ? "west" : "east";
+  const setServer = (end: TableEnd) => {
+    const active = end; // "east" | "west"
+    const passive = end === "east" ? "west" : "east";
 
     const on = names[active].orb;
     const off = names[passive].orb;
@@ -278,17 +288,17 @@ export function createScoreboard(): DomScoreboardAPI {
     deuce.style.opacity = flag ? "1" : "0";
   };
 
-  const setPlayerNames = (l: string, r: string) => {
-    names.east.name.textContent = l;
-    names.west.name.textContent = r;
-    names.east.name.setAttribute("title", l);
-    names.west.name.setAttribute("title", r);
+  const setPlayerNames = (eastName: string, westName: string) => {
+    names.east.name.textContent = eastName;
+    names.west.name.textContent = westName;
+    names.east.name.setAttribute("title", eastName);
+    names.west.name.setAttribute("title", westName);
 
     applyNameColumns(); // sizes to the longest name automatically
 
     const rect = panel.getBoundingClientRect();
     deuce.style.left = rect.right - 8 + "px";
-    deuce.style.top  = rect.top + 6 + "px";
+    deuce.style.top = rect.top + 6 + "px";
   };
 
   const setGames = (

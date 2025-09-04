@@ -23,11 +23,11 @@ export function updateHUD(
   names?: NamesByEnd,
   match?: MatchSnapshotForHUD,
 ) {
-  // Points → UI
+  // Points → UI (east = top row, west = bottom row)
   hud.setPoints(s.points.east, s.points.west);
 
-  // Server ring → UI
-  hud.setServer(s.server === "east" ? "left" : "right");
+  // Server ring → UI (no mirroring; pass the end directly)
+  hud.setServer(s.server);
 
   // Deuce pill
   hud.setDeuce(

@@ -15,3 +15,5 @@ Force field FX:
 - Per-frame hook: if several effects need the same per-frame tick, centralize it in the manager.
 - Config: accept a small FXConfig (colors, timings) to keep hard-coded numbers out of effects.
 - Make the camera shake when the ball explodes
+
+- fallback to default if invalid localStorage

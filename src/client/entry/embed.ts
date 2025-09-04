@@ -35,6 +35,8 @@ import { pickInitialServer, type MatchSeed } from "../../shared/utils/rng";
 import { serveFrom } from "../../game/systems/flow";
 
 import { SERVE_SELECT_TOTAL_MS } from "../../game/constants";
+import type { TableEnd } from "../../shared/types";
+import type { GameState } from "../../game/model/state";
 
 Logger.setLevel("debug");
 
@@ -60,7 +62,41 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
 
   const hud = createScoreboard();
   hud.attachToCanvas(canvas);
-  let names = { east: "Magenta", west: "Green" };
+
+  // ── HUD: player-pinned rows (top = P1, bottom = P2) ──────────────────────────
+  const names = { east: "Magenta", west: "Green" };
+
+  // Track actual side swaps to know when the players have crossed.
+  // false = initial orientation (P1 on east/top row)
+  let rowsMirrored = false;
+
+  // Convert end-based state to player rows when flipped is true
+  const asPlayerRows = (s: GameState, flipped: boolean): GameState => {
+    if (!flipped) return s;
+    return {
+      ...s,
+      points: { east: s.points.west, west: s.points.east },
+      server: (s.server === "east" ? "west" : "east") as TableEnd,
+    };
+  };
+
+  // Normalize finished games so each row always refers to the same player
+  const mapHistoryForPlayers = (
+    history: ReturnType<typeof match.getSnapshot>["gamesHistory"] | undefined,
+  ) => {
+    const list = history ?? [];
+    if (!RULES.match.switchEndsEachGame) return list;
+    return list.map((g) =>
+      g.gameIndex % 2 === 0
+        ? {
+            gameIndex: g.gameIndex,
+            east: g.west,
+            west: g.east,
+            winner: (g.winner === "east" ? "west" : "east") as TableEnd,
+          }
+        : g,
+    );
+  };
 
   // Bounds once (render → headless)
   const { bounds, zMax } = computeBounds(world);
@@ -140,7 +176,8 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
           right.mesh.material = m;
         }
 
-        names = { east: names.west, west: names.east };
+        // Players actually crossed sides → toggle parity for HUD mapping
+        rowsMirrored = !rowsMirrored;
 
         // nice cross-over cue
         paddleAnim.cue(180);
@@ -157,12 +194,16 @@ export function createPong(canvas: HTMLCanvasElement): PongInstance {
         });
       }
 
-      // 5) HUD (names + match snapshot -> games strip)
+      // 5) HUD (player-pinned)
       const snap = match.getSnapshot();
-      updateHUD(hud, state, names, {
+
+      const stateForHUD = asPlayerRows(state, rowsMirrored);
+      const historyForHUD = mapHistoryForPlayers(snap.gamesHistory);
+
+      updateHUD(hud, stateForHUD, names, {
         bestOf: snap.bestOf,
         currentGameIndex: snap.currentGameIndex,
-        gamesHistory: snap.gamesHistory ?? [],
+        gamesHistory: historyForHUD,
       });
 
       // 6) Visual bounce Y + project meshes

@@ -14,13 +14,20 @@ export function createMatchController(
 ) {
   let game = addRulesToState(createInitialState(bounds, initialServer), rules);
   let currentGameIndex = 1;
-  const gamesWon = { east: 0, west: 0 };
+
+  // ⚠️ Old bug: this counted by *table end*.
+  const gamesWonByEnd = { east: 0, west: 0 };
+
+  // ✅ New: count by player identity. Define P1 as the player who starts the match on EAST.
+  let p1AtEastNow = true; // flips whenever we swap sides
+  const gamesWonByPlayer = { P1: 0, P2: 0 };
+
   let matchWinner: TableEnd | undefined;
   let endsFlippedThisGame = false;
   let midSwapDoneThisGame = false;
   let initialServerThisGame: TableEnd = initialServer;
 
-  // NEW: contiguous game history to drive HUD game boxes
+  // Immutable history for HUD
   const gamesHistory: Array<{
     gameIndex: number;
     east: number;
@@ -47,15 +54,17 @@ export function createMatchController(
     return {
       bestOf: rules.match.bestOf,
       currentGameIndex,
-      gamesWon,
+      gamesWon: { ...gamesWonByEnd }, // kept for debugging/compat
       matchWinner,
       endsFlippedThisGame,
       midSwapDoneThisGame,
       initialServerThisGame,
-      // NEW: expose immutable copy for UI
       gamesHistory: [...gamesHistory],
     };
   }
+
+  const endToPlayer = (end: TableEnd): "P1" | "P2" =>
+    end === "east" ? (p1AtEastNow ? "P1" : "P2") : p1AtEastNow ? "P2" : "P1";
 
   /** Call AFTER physics/flow step each frame. */
   function afterPhysicsStep(next: GameState) {
@@ -66,7 +75,7 @@ export function createMatchController(
       matchOver?: { winner: TableEnd };
     } = {};
 
-    // Deciding-game mid swap
+    // Deciding-game mid swap at threshold → flip players’ ends now.
     const deciding = currentGameIndex === rules.match.bestOf;
     if (
       deciding &&
@@ -76,9 +85,11 @@ export function createMatchController(
         game.points.west >= rules.match.decidingGameMidSwapAtPoints)
     ) {
       midSwapDoneThisGame = true;
+      p1AtEastNow = !p1AtEastNow; // ⟵ keep player↔end mapping correct
       events.swapSidesNow = true;
     }
 
+    // Ensure a timer exists during between-games pause
     if (
       game.phase === "pauseBetweenGames" &&
       game.tPauseBtwGamesMs === undefined
@@ -86,7 +97,7 @@ export function createMatchController(
       game = { ...game, tPauseBtwGamesMs: PAUSE_BETWEEN_GAMES_MS };
     }
 
-    // Transition out of pauseBetweenGames when timer hits 0
+    // Transition out of between-games pause when timer hits 0
     if (
       game.phase === "pauseBetweenGames" &&
       (game.tPauseBtwGamesMs ?? 0) <= 0
@@ -97,6 +108,7 @@ export function createMatchController(
 
       if (rules.match.switchEndsEachGame) {
         endsFlippedThisGame = true;
+        p1AtEastNow = !p1AtEastNow; // ⟵ sides actually swap at game start
         events.swapSidesNow = true;
       }
 
@@ -105,7 +117,6 @@ export function createMatchController(
         : initialServerThisGame;
       initialServerThisGame = nextInitialServer;
 
-      // Fresh game state + immediately arm the opening serve so the ball has velocity
       const fresh = addRulesToState(
         createInitialState(game.bounds, nextInitialServer),
         rules,
@@ -115,9 +126,9 @@ export function createMatchController(
       return { state: game, events };
     }
 
-    // Reached gameOver this frame? Record & start the proper pause.
+    // Game finished this frame?
     if (game.phase === "gameOver" && game.gameWinner) {
-      // NEW: record final score for this game once
+      // Record immutable history once
       if (!gamesHistory.some((g) => g.gameIndex === currentGameIndex)) {
         gamesHistory.push({
           gameIndex: currentGameIndex,
@@ -127,19 +138,36 @@ export function createMatchController(
         });
       }
 
-      // Record game win once (we flip phase immediately below so it won't repeat)
-      gamesWon[game.gameWinner]++;
+      // Keep old end-based counters for reference (not used to decide match)
+      gamesWonByEnd[game.gameWinner]++;
+
+      // ✅ Player-centric win counting
+      const winnerPlayer = endToPlayer(game.gameWinner);
+      gamesWonByPlayer[winnerPlayer]++;
+
       events.gameOver = {
         winner: game.gameWinner,
         gameIndex: currentGameIndex,
       };
 
-      // Match decided?
+      // Decide match by player wins (first to ceil(bestOf/2))
       const need = Math.ceil(rules.match.bestOf / 2);
-      if (gamesWon.east >= need || gamesWon.west >= need) {
-        matchWinner = gamesWon.east > gamesWon.west ? "east" : "west";
+      const p1Won = gamesWonByPlayer.P1 >= need;
+      const p2Won = gamesWonByPlayer.P2 >= need;
+
+      if (p1Won || p2Won) {
+        // Express match winner as the TABLE END they occupy *right now* (for completeness)
+        matchWinner = (
+          p1Won
+            ? p1AtEastNow
+              ? "east"
+              : "west"
+            : p1AtEastNow
+              ? "west"
+              : "east"
+        ) as TableEnd;
+
         events.matchOver = { winner: matchWinner };
-        // Enter a terminal victory pause
         game = {
           ...game,
           phase: "matchOver",
@@ -148,7 +176,7 @@ export function createMatchController(
         return { state: game, events };
       }
 
-      // Otherwise: enter between-games pause (flow/pause.ts will tick the timer)
+      // Otherwise: enter between-games pause
       const ms = game.tPauseBtwGamesMs ?? PAUSE_BETWEEN_GAMES_MS;
       game = { ...game, phase: "pauseBetweenGames", tPauseBtwGamesMs: ms };
       return { state: game, events };

@@ -136,7 +136,7 @@ export function createInitialState(
     params: {
       // physics/gameplay
       paddleSpeed: 2.2,
-      ballSpeed: 2.2,
+      ballSpeed: 10.0,
       zEnglish: 0.75,
       restitutionWall: 1.0,
 
