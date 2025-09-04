@@ -1,7 +1,7 @@
 // src/client/input/keyboard.ts
 const keys = new Set<string>();
 
-export type KeyboardDetach = () => void;
+type KeyboardDetach = () => void;
 
 /** Attach key listeners to any focusable host element (e.g., canvas). */
 export function attachKeyboard(el: HTMLElement): KeyboardDetach {

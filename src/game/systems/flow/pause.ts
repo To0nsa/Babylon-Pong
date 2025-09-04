@@ -1,8 +1,8 @@
 // src/game/systems/flow/pause.ts
-import { MS_PER_S } from "../../constants";
-import type { GameState } from "../../model";
-import type { TableEnd } from "../../../shared/types";
-import { serveFrom } from ".";
+import { MS_PER_S } from "@game/constants";
+import type { GameState } from "@game/model/state";
+import type { TableEnd } from "@shared/domain/ids";
+import { serveFrom } from "@game/systems/flow/service";
 
 function dec(ms: number | undefined, dt: number): number {
   // dt is seconds → convert to ms and clamp

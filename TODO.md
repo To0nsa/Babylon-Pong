@@ -17,3 +17,10 @@ Force field FX:
 - Make the camera shake when the ball explodes
 
 - fallback to default if invalid localStorage
+
+- ViewSnapshot type
+
+- to run the headless server directly under Node ESM, consider either building first (tsc/tsup) or switching the script to an ESM-friendly runner (e.g., tsx)—the current -r ts-node/register hook can be finicky under "type": "module"
+
+- add protocol_v
+- future package extraction

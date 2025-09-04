@@ -1,12 +1,10 @@
 // src/game/systems/flow/scoring.ts
-import type { GameState } from "../../model";
-import type { FrameEvents } from "../../model";
-import {
-  PAUSE_BETWEEN_POINTS_MS,
-  PAUSE_BETWEEN_GAMES_MS,
-} from "../../constants";
-import { rotateService, hasGameWinner } from ".";
-import type { TableEnd } from "shared/types";
+import type { GameState } from "@game/model/state";
+import type { FrameEvents } from "@shared/protocol/events";
+import { PAUSE_BETWEEN_POINTS_MS, PAUSE_BETWEEN_GAMES_MS } from "@game/constants";
+import { rotateService } from "@game/systems/flow/service";
+import { hasGameWinner } from "@game/systems/flow/win";
+import type { TableEnd } from "@shared/domain/ids";
 
 export function maybeScoreAndFreeze(
   s: GameState,

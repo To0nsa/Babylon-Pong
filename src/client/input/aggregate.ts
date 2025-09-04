@@ -1,8 +1,8 @@
 // src/client/input/aggregate.ts
-import type { InputIntent } from "../../game/input/input";
-import { ZeroIntent } from "../../game/input/input";
+import type { InputIntent } from "@shared/protocol/input";
+import { ZeroIntent } from "@shared/protocol/input";
 import { attachKeyboard, readKeyboardAxes } from "./keyboard";
-import { attachTouchZones, readTouchAxes } from "./touchZones";
+import { attachTouchZones, readTouchAxes } from "./touch-zones";
 import { blockInputFor, isInputBlocked } from "./block";
 
 export { blockInputFor, isInputBlocked };

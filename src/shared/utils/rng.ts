@@ -1,5 +1,5 @@
 // src/shared/utils/rng.ts
-import type { TableEnd } from "../types";
+import type { TableEnd } from "@shared/domain/ids";
 
 export interface RandomSource {
   next(): number; // [0, 1)

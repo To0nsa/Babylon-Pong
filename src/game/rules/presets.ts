@@ -1,5 +1,5 @@
 // src/game/rules/presets.ts
-import type { Ruleset } from "./types";
+import type { Ruleset } from "@shared/domain/rules";
 
 export function tableTennisRules(overrides?: Partial<Ruleset>): Ruleset {
   const base: Ruleset = {

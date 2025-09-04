@@ -1,6 +1,6 @@
 // src/game/ball/service.ts
-import type { GameState } from "../../model";
-import type { TableEnd } from "../../../shared/types";
+import type { GameState } from "@game/model/state";
+import type { TableEnd } from "@shared/domain/ids";
 
 export function inDeuceMode(s: GameState): boolean {
   const deuceAt = s.params.deuceAt ?? s.params.targetScore - 1;

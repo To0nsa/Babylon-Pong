@@ -1,11 +1,11 @@
 // src/game/match/controller.ts
-import type { TableEnd } from "../../shared/types";
-import type { GameState } from "../model";
-import { createInitialState } from "../model";
-import type { Ruleset } from "../rules";
-import { sideOpposite } from "../rules";
-import { serveFrom } from "../systems/flow";
-import { PAUSE_BETWEEN_GAMES_MS, PAUSE_MATCH_OVER_MS } from "../constants";
+import type { TableEnd } from "@shared/domain/ids";
+import type { GameState } from "@game/model/state";
+import { createInitialState } from "@game/model/state";
+import type { Ruleset } from "@shared/domain/rules";
+import { sideOpposite } from "@shared/domain/rules";
+import { serveFrom } from "@game/systems/flow/service";
+import { PAUSE_BETWEEN_GAMES_MS, PAUSE_MATCH_OVER_MS } from "@game/constants";
 
 export function createMatchController(
   bounds: GameState["bounds"],

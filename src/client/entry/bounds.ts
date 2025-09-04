@@ -1,5 +1,5 @@
-import type { WorldKit } from "../scene";
-import type { GameState } from "../../game/model/state";
+import type { WorldKit } from "@client/scene/scene";
+import type { GameState } from "@game/model/state";
 
 /** Read Babylon geometry once and derive headless bounds + zMax for FX. */
 export function computeBounds(world: WorldKit): {

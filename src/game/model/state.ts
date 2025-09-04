@@ -1,6 +1,6 @@
 // src/game/state.ts
-import { PAUSE_BETWEEN_POINTS_MS } from "../../game/constants";
-import type { TableEnd } from "../../shared/types";
+import { PAUSE_BETWEEN_POINTS_MS } from "@game/constants";
+import type { TableEnd } from "@shared/domain/ids";
 
 /** Paddle state along Z (depth). */
 export type Paddle = { z: number; vz: number };

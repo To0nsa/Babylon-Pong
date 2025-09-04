@@ -1,8 +1,8 @@
 // src/game/systems/flow/phaseManager.ts
-import type { GameState } from "../../model/state";
-import type { FrameEvents } from "../../model/types";
-import { isRallyPhase, isServePhase } from "../utils";
-import { collideWalls, collidePaddle } from "../physics";
+import type { GameState } from "@game/model/state";
+import type { FrameEvents } from "@shared/protocol/events";
+import { isRallyPhase, isServePhase } from "@game/systems/utils";
+import { collideWalls, collidePaddle } from "@game/systems/physics/collisions";
 import { maybeScoreAndFreeze } from "./scoring";
 import { stepPause } from "./pause";
 

@@ -1,6 +1,6 @@
 // src/game/systems/flow/win.ts
-import type { GameState } from "../../model";
-import type { TableEnd } from "shared/types";
+import type { GameState } from "@game/model/state";
+import type { TableEnd } from "@shared/domain/ids";
 
 /** Points-level win (single game): targetScore with winBy margin. */
 export function hasGameWinner(s: GameState): TableEnd | null {
