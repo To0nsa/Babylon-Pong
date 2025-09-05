@@ -88,8 +88,11 @@ export default [
       // --- Noise reduction ---
       "no-console": "off", // Allowed for debugging; can be restricted later in production
       "no-unused-vars": "off", // TS handles this better
-      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
-      "eqeqeq": ["warn", "smart"], // Encourage ===, allow == null for null/undefined checks
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_" },
+      ],
+      eqeqeq: ["warn", "smart"], // Encourage ===, allow == null for null/undefined checks
 
       // Formatting is handled by Prettier — no ESLint style rules here
     },
@@ -102,7 +105,10 @@ export default [
     rules: {
       "no-restricted-imports": "off",
       "unicorn/filename-case": "off",
-      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_" },
+      ],
     },
   },
 

@@ -23,7 +23,7 @@ export function readKeyboardAxes(): {
 } {
   const clamp1 = (v: number) => (v > 0 ? 1 : v < 0 ? -1 : 0);
 
-  const leftKey = (keys.has("w") ? 1 : 0) + (keys.has("s") ? -1 : 0);
+  const leftKey = (keys.has("z") ? 1 : 0) + (keys.has("s") ? -1 : 0);
 
   const rightKey =
     (keys.has("ArrowUp") ? 1 : 0) + (keys.has("ArrowDown") ? -1 : 0);

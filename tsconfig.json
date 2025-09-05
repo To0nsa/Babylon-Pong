@@ -7,7 +7,11 @@
     "skipLibCheck": true,
     "baseUrl": "src",
     "paths": {
+      "@app": ["app/index.ts"],
+      "@app/*": ["app/*"],
+      "@shared": ["shared/index.ts"],
       "@shared/*": ["shared/*"],
+      "@game": ["game/index.ts"],
       "@game/*": ["game/*"],
       "@client/*": ["client/*"],
       "@utils/*": ["shared/utils/*"],
@@ -30,5 +34,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src", "types.d"]
+  "include": ["src", "types", "app"]
 }

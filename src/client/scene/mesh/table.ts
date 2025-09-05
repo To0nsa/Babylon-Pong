@@ -4,7 +4,10 @@ import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { Colors } from "@client/scene/color";
-import { makeNeonGlass, makeNeonLine } from "@client/scene/materials/neon-glass";
+import {
+  makeNeonGlass,
+  makeNeonLine,
+} from "@client/scene/materials/neon-glass";
 
 export type TableHandle = {
   root: TransformNode;

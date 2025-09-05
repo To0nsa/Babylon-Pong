@@ -24,3 +24,9 @@ Force field FX:
 
 - add protocol_v
 - future package extraction
+
+shared → can be imported by anyone, but must only import itself.
+game → may import from shared only.
+client → may import from shared only (never from game).
+app → may import from client, game, and shared.
+server → may import from game and shared (never from client).

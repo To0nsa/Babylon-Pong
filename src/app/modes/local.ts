@@ -4,10 +4,6 @@ import { createLifecycle } from "@client/engine/lifecycle";
 import { createWorld } from "@client/scene/scene";
 import Logger from "@shared/utils/logger";
 
-import { createInitialState } from "@game/model/state";
-import { stepPaddles } from "@game/systems/control/paddle";
-import { handleSteps } from "@game/systems/flow/phases";
-
 import { attachLocalInput, readIntent } from "@client/input/aggregate";
 import { toggleControlsMirrored, blockInputFor } from "@client/input/aggregate";
 import { createBounces } from "@client/visuals/bounce/bounces";
@@ -15,24 +11,29 @@ import { createBounces } from "@client/visuals/bounce/bounces";
 import { FXManager } from "@client/fx/manager";
 
 import { createScoreboard } from "@client/ui/scoreboard";
-import "@client/ui/tailwind.css";
-import "./babylon-register";
 
-import { computeBounds } from "./bounds";
+import { computeBounds } from "@app/adapters/bounds";
 import { createPaddleAnimator } from "@client/visuals/animate-paddle";
-import { detectEnteredServe, onEnteredServe } from "./serve-cue";
+import { detectEnteredServe, onEnteredServe } from "@app/adapters/serve-cue";
 import { updateHUD } from "@client/ui/hud-binding";
-import { applyFrameEvents } from "./events-to-fx";
+import { applyFrameEvents } from "@app/adapters/events-to-fx";
 
-import { tableTennisRules } from "@game/rules/presets";
-import { createMatchController } from "@game/match/controller";
+import {
+  type GameState,
+  createInitialState,
+  stepPaddles,
+  handleSteps,
+  serveFrom,
+  createMatchController,
+  tableTennisRules,
+} from "@game";
 
-import { pickInitialServer, type MatchSeed } from "@shared/utils/rng";
-import { serveFrom } from "@game/systems/flow/service";
-
-import { SERVE_SELECT_TOTAL_MS } from "@shared/domain/timing";
-import type { TableEnd } from "@shared/domain/ids";
-import type { GameState } from "@game/model/state";
+import {
+  pickInitialServer,
+  type MatchSeed,
+  SERVE_SELECT_TOTAL_MS,
+  type TableEnd,
+} from "@shared";
 
 interface PongInstance {
   start(): void;
@@ -47,7 +48,7 @@ function localMatchSeed(): MatchSeed {
   return buf[0] >>> 0;
 }
 
-export function createPong(canvas: HTMLCanvasElement): PongInstance {
+export function createLocalApp(canvas: HTMLCanvasElement): PongInstance {
   canvas.tabIndex = 1;
 
   const matchSeed = localMatchSeed();

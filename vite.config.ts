@@ -6,8 +6,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 export default defineConfig({
   build: {
     lib: {
-      // see #2 below re: entry
-      entry: "src/client/entry/embed.ts",
+      entry: "src/main.ts",
       name: "BabylonPong",
       fileName: "babylon-pong",
       formats: ["es", "iife"],
