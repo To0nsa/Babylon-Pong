@@ -3,11 +3,14 @@ import type { Scene } from "@babylonjs/core/scene";
 import type { Vector3 } from "@babylonjs/core/Maths/math";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import type { Observer } from "@babylonjs/core/Misc/observable";
+import type { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera";
 import type { WallSide, TableEnd } from "@shared/domain/ids";
+
 import { createFXContext, type FXContext } from "./context";
 import { createForceFieldFX } from "./force-field";
 import { createGlowBurstFX } from "./burst";
 import { createServeSelectionFX } from "./serve-select";
+import { createCameraShakeFX } from "./camera-shake";
 import type { FXConfig } from "./config";
 import { DEFAULT_FX_CONFIG } from "./config";
 
@@ -17,6 +20,7 @@ export type FXManagerOptions = {
   ballMesh: AbstractMesh;
   ballRadius: number;
   tableTop: AbstractMesh;
+  camera: ArcRotateCamera; // NEW
 };
 
 export class FXManager {
@@ -26,6 +30,7 @@ export class FXManager {
   private forceField: ReturnType<typeof createForceFieldFX>;
   private burst: ReturnType<typeof createGlowBurstFX>;
   private serveSelect: ReturnType<typeof createServeSelectionFX>;
+  private camShake: ReturnType<typeof createCameraShakeFX>;
 
   // --- central tick infra ---
   private readonly _tickers = new Set<(dt: number) => boolean | void>();
@@ -52,6 +57,14 @@ export class FXManager {
       this.ctx,
       opts.ballMesh,
       opts.ballRadius,
+      (fn) => this.addTicker(fn),
+      this.config,
+    );
+
+    // Camera shake
+    this.camShake = createCameraShakeFX(
+      this.ctx,
+      opts.camera,
       (fn) => this.addTicker(fn),
       this.config,
     );
@@ -105,10 +118,13 @@ export class FXManager {
 
   burstAt(x: number, y: number, z: number): void {
     this.burst.trigger(x, y, z);
+    // Gentle kick — tuned to scene scale; intensities already gated in the FX.
+    this.camShake.trigger(1.0, 320);
   }
 
   burstAtV3(p: Vector3): void {
     this.burst.trigger(p.x, p.y, p.z);
+    this.camShake.trigger(1.0, 320);
   }
 
   async serveSelection(end: TableEnd): Promise<void> {
@@ -122,5 +138,6 @@ export class FXManager {
     this.forceField?.dispose?.();
     this.burst?.dispose?.();
     this.serveSelect?.dispose?.();
+    this.camShake?.dispose?.();
   }
 }

@@ -13,7 +13,7 @@ import type { Scene } from "@babylonjs/core/scene";
 export function setupCamera(scene: Scene) {
   const target = Vector3.Zero();
   const name = "cam";
-  const alpha = Math.PI * 1.0; // horizontal angle in radians (~270°)
+  const alpha = Math.PI * 1.5; // horizontal angle in radians (~270°)
   const beta = Math.PI / 3.0; // vertical angle in radians (~60°)
   const radius = 3; // distance from target in meters
 
