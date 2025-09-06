@@ -1,4 +1,4 @@
-// src/game/systems/collisions.ts
+// src/game/systems/physics/collisions.ts
 import type { GameState } from "@game/model/state";
 import type { FrameEvents } from "@shared/protocol/events";
 import { clampZ } from "@game/systems/utils";
@@ -8,6 +8,7 @@ export function collideWalls(
   dt: number,
 ): { s: GameState; wallHit?: FrameEvents["wallHit"] } {
   let { x, z, vx, vz } = s.ball;
+  const vzIn = vz; // keep the incoming Z-speed for FX
 
   const nextZ = z + vz * dt;
   const zMax = s.bounds.halfWidthZ - s.bounds.ballRadius;
@@ -18,12 +19,12 @@ export function collideWalls(
     const overshoot = nextZ - zMax;
     z = zMax - overshoot;
     vz = -vz * s.params.restitutionWall;
-    wallHit = { side: "north", x, z };
+    wallHit = { side: "north", x, z, vzAbs: Math.abs(vzIn) };
   } else if (nextZ < -zMax && vz < 0) {
     const overshoot = -zMax - nextZ;
     z = -zMax + overshoot;
     vz = -vz * s.params.restitutionWall;
-    wallHit = { side: "south", x, z };
+    wallHit = { side: "south", x, z, vzAbs: Math.abs(vzIn) };
   } else {
     z = nextZ;
   }

@@ -8,8 +8,8 @@ export function applyFrameEvents(
   ballY: number,
 ) {
   if (ev.wallHit) {
-    const { side, x } = ev.wallHit;
-    fx.wallPulse(side, x, ballY);
+    const { side, x, vzAbs } = ev.wallHit;
+    fx.wallPulse(side, x, ballY, vzAbs);
   }
   if (ev.explode) {
     const { x, z } = ev.explode;

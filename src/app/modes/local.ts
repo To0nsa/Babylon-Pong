@@ -49,12 +49,12 @@ export function createLocalApp(canvas: HTMLCanvasElement): PongInstance {
   const names = { east: "Magenta", west: "Green" } as const;
 
   // Bounds once (render → headless)
-  const { bounds, zMax } = computeBounds(world);
+  const { bounds } = computeBounds(world);
 
   // FX manager
   const fx = new FXManager(scene, {
-    wallZNorth: +zMax,
-    wallZSouth: -zMax,
+    wallZNorth: +bounds.halfWidthZ,
+    wallZSouth: -bounds.halfWidthZ,
     ballMesh: ball.mesh,
     ballRadius: bounds.ballRadius,
     tableTop: table.tableTop,

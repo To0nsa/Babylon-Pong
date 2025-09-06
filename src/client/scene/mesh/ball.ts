@@ -34,8 +34,8 @@ export function addBall(
   mesh.isPickable = false;
 
   const mat = new StandardMaterial("ball-mat", scene);
-  mat.diffuseColor = Colors.ball.clone();
   mat.specularColor = Colors.material.specularNone;
+  mat.diffuseColor = Colors.ball.clone();
   mesh.material = mat;
 
   const dispose = () => {

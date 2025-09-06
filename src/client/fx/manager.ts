@@ -2,12 +2,14 @@
 import type { Scene } from "@babylonjs/core/scene";
 import type { Vector3 } from "@babylonjs/core/Maths/math";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
+import type { Observer } from "@babylonjs/core/Misc/observable";
 import type { WallSide, TableEnd } from "@shared/domain/ids";
-
 import { createFXContext, type FXContext } from "./context";
 import { createForceFieldFX } from "./force-field";
 import { createGlowBurstFX } from "./burst";
 import { createServeSelectionFX } from "./serve-select";
+import type { FXConfig } from "./config";
+import { DEFAULT_FX_CONFIG } from "./config";
 
 export type FXManagerOptions = {
   wallZNorth: number;
@@ -18,59 +20,107 @@ export type FXManagerOptions = {
 };
 
 export class FXManager {
-  readonly ctx: FXContext;
+  private readonly ctx: FXContext;
+  private readonly config: FXConfig;
+
   private forceField: ReturnType<typeof createForceFieldFX>;
   private burst: ReturnType<typeof createGlowBurstFX>;
   private serveSelect: ReturnType<typeof createServeSelectionFX>;
 
-  constructor(scene: Scene, opts: FXManagerOptions) {
-    this.ctx = createFXContext(scene);
+  // --- central tick infra ---
+  private readonly _tickers = new Set<(dt: number) => boolean | void>();
+  private _tickSub?: Observer<Scene>;
+  private _lastTime = 0;
+  private readonly _kill: Array<(dt: number) => boolean | void> = [];
 
+  constructor(scene: Scene, opts: FXManagerOptions, config?: Partial<FXConfig>) {
+    this.ctx = createFXContext(scene);
+    this.config = { ...DEFAULT_FX_CONFIG, ...(config as FXConfig) };
+
+    // Force-field (pooled hex planes; intensity by speed)
     this.forceField = createForceFieldFX(
       this.ctx,
       opts.wallZNorth,
       opts.wallZSouth,
       opts.ballRadius,
+      (fn) => this.addTicker(fn),
+      this.config,
     );
 
-    this.burst = createGlowBurstFX(this.ctx, opts.ballMesh, opts.ballRadius, {
-      scale: 0.6,
-      intensity: 1.0,
-      durations: { flash: 312, ring: 432, spark: 504 },
-      sparkCount: 6,
-    });
+    // Burst (pooled; ball-tinted)
+    this.burst = createGlowBurstFX(
+      this.ctx,
+      opts.ballMesh,
+      opts.ballRadius,
+      (fn) => this.addTicker(fn),
+      this.config,
+    );
 
-    // Serve select now mirrors how Burst handles options: constructor-time.
-    this.serveSelect = createServeSelectionFX(this.ctx, opts.tableTop, {
-      beatMs: 120,
-      holdMs: 1000,
-      alpha: 0.35,
-    });
+    // Serve selection (central ticker)
+    this.serveSelect = createServeSelectionFX(
+      this.ctx,
+      opts.tableTop,
+      {
+        beatMs: 120,
+        holdMs: 1000,
+        alpha: 0.35 * this.config.intensity.alphaMul,
+      },
+      (fn) => this.addTicker(fn),
+    );
   }
 
-  wallPulse(side: WallSide, x: number, y: number) {
-    this.forceField.trigger(side, x, y);
+  addTicker(fn: (dt: number) => boolean | void): () => void {
+    this._tickers.add(fn);
+    if (!this._tickSub) {
+      const { scene } = this.ctx;
+      this._lastTime = performance.now();
+      this._tickSub = scene.onBeforeRenderObservable.add(() => {
+        const now = performance.now();
+        const dt = Math.min(0.1, (now - this._lastTime) / 1000);
+        this._lastTime = now;
+        for (const t of this._tickers) if (t(dt) === false) this._kill.push(t);
+        if (this._kill.length) {
+          for (let i = 0; i < this._kill.length; i++) this._tickers.delete(this._kill[i]);
+          this._kill.length = 0;
+          if (this._tickers.size === 0 && this._tickSub) {
+            this.ctx.scene.onBeforeRenderObservable.remove(this._tickSub);
+            this._tickSub = undefined;
+          }
+        }
+      });
+    }
+    return () => {
+      this._tickers.delete(fn);
+      if (this._tickers.size === 0 && this._tickSub) {
+        this.ctx.scene.onBeforeRenderObservable.remove(this._tickSub);
+        this._tickSub = undefined;
+      }
+    };
   }
 
-  burstAt(x: number, y: number, z: number) {
+  // -------- public API --------
+  wallPulse(side: WallSide, x: number, y: number, vzAbs?: number): void {
+    this.forceField.trigger(side, x, y, vzAbs ?? 0);
+  }
+
+  burstAt(x: number, y: number, z: number): void {
     this.burst.trigger(x, y, z);
   }
 
-  burstAtV3(p: Vector3) {
+  burstAtV3(p: Vector3): void {
     this.burst.trigger(p.x, p.y, p.z);
   }
 
-  // Duration is a constant; no param.
   async serveSelection(end: TableEnd): Promise<void> {
     await this.serveSelect.trigger(end);
   }
 
-  dispose() {
+  dispose(): void {
+    if (this._tickSub) this.ctx.scene.onBeforeRenderObservable.remove(this._tickSub);
+    this._tickSub = undefined;
+    this._tickers.clear();
     this.forceField?.dispose?.();
     this.burst?.dispose?.();
     this.serveSelect?.dispose?.();
   }
 }
-
-// Optional: export the constant through this module too, if convenient:
-// export { SERVE_SELECT_TOTAL_MS } from "./ServeSelect";

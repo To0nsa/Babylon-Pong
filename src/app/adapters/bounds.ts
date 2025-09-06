@@ -2,10 +2,9 @@
 import type { WorldKit } from "@client/scene/scene";
 import type { GameState } from "@game/model/state";
 
-/** Read Babylon geometry once and derive headless bounds + zMax for FX. */
+/** Read Babylon geometry once and derive headless bounds. */
 export function computeBounds(world: WorldKit): {
   bounds: GameState["bounds"];
-  zMax: number;
 } {
   const {
     table,
@@ -32,8 +31,6 @@ export function computeBounds(world: WorldKit): {
   const leftPaddleX = left.mesh.getBoundingInfo().boundingBox.centerWorld.x;
   const rightPaddleX = right.mesh.getBoundingInfo().boundingBox.centerWorld.x;
 
-  // Max |z| allowed for the BALL CENTER
-  const zMax = halfWidthZ - ballRadius;
 
   const bounds: GameState["bounds"] = {
     halfLengthX,
@@ -44,5 +41,5 @@ export function computeBounds(world: WorldKit): {
     ballRadius,
   };
 
-  return { bounds, zMax };
+  return { bounds };
 }

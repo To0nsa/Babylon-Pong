@@ -1,53 +1,61 @@
 // src/client/fx/burst.ts
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
-import { Color3, Vector3 } from "@babylonjs/core/Maths/math";
+import { Vector3 } from "@babylonjs/core/Maths/math";
 import { Constants } from "@babylonjs/core/Engines/constants";
-import { clamp01 } from "@shared/utils/math";
+
 import type { FXContext } from "./context";
-import { incHide, easeOutQuad } from "./utils";
+import type { FXConfig } from "./config";
+import { DEFAULT_FX_CONFIG } from "./config";
+import { makePool } from "./pool";
+import { easeOutQuad, incHide } from "./utils";
+import { clamp01 } from "@shared/utils/math";
+import { getBallTint } from "./colors";
 
-// If you have FXColors, you can keep using it; otherwise pick colors here:
-const DEFAULT_CORE = new Color3(1.0, 0.7, 0.2); // warm orange
-const DEFAULT_RING = new Color3(1.2, 0.9, 0.5);
-const DEFAULT_SPARK = new Color3(1.0, 0.8, 0.4);
+type Unsub = () => void;
 
-export type BurstOptions = {
-  /** Master knob: scales size, speed, debris count, and a bit of lifetime. Default 1. */
-  scale?: number;
-  /** Extra brightness punch without changing size. Default 1. */
-  intensity?: number;
-  /** Override spark count (after scale). If omitted, uses 10 * scale. */
-  sparkCount?: number;
-  /** Lifetimes in ms (pre-scale). */
-  durations?: { flash?: number; ring?: number; spark?: number };
-  /** Peak glow intensity target; default auto based on intensity. */
-  glowPeak?: number;
-  /** Color overrides. */
-  colors?: { core?: Color3; ring?: Color3; spark?: Color3 };
-  /** Multipliers for spark speed and gravity. */
-  speedMul?: number;
-  gravityMul?: number;
+type Spark = { mesh: Mesh; v: Vector3 };
+type Actor = {
+  flash: Mesh;
+  ring: Mesh;
+  sparks: Spark[];
+  mats: {
+    flash: StandardMaterial;
+    ring: StandardMaterial;
+    spark: StandardMaterial;
+  };
+  ringYScale: number;
+};
+
+type Burst = {
+  actor: Actor;
+  ageMs: number;
+  lifeFlash: number;
+  lifeRing: number;
+  lifeSpark: number;
 };
 
 export function createGlowBurstFX(
   ctx: FXContext,
   ballMesh: AbstractMesh,
   ballRadius: number,
-  options: BurstOptions = {},
+  addTicker: (fn: (dt: number) => boolean | void) => Unsub,
+  cfg: FXConfig = DEFAULT_FX_CONFIG,
 ) {
-  const { scene, glow } = ctx;
+  const { scene } = ctx;
 
-  // -------- options / scaling --------
-  const S = Math.max(0.25, options.scale ?? 1); // global scale
-  const I = Math.max(0.2, options.intensity ?? 1); // brightness oomph
+  // Global knobs (kept close to prior look)
+  const S = 0.6 * (cfg.intensity.sizeMul ?? 1);     // master size dial
+  const I = 1.0 * (cfg.intensity.alphaMul ?? 1);    // master alpha dial
 
   const base = {
-    flashMs: 260,
-    ringMs: 360,
-    sparkMs: 420,
-    sparkCount: 10,
+    sparkCount: Math.max(2, cfg.burst.sparkCount | 0),
+    flashMs: Math.max(60, cfg.burst.flashMs | 0),
+    ringMs: Math.max(60, cfg.burst.ringMs | 0),
+    sparkMs: Math.max(60, cfg.burst.sparkMs | 0),
+
     sparkSpeed: 22,
     sparkGravity: -60,
     ringDiameter: 5.0,
@@ -55,180 +63,217 @@ export function createGlowBurstFX(
     sparkSize: 0.22,
   };
 
-  const durations = {
-    flash: (options.durations?.flash ?? base.flashMs) * (0.85 + 0.15 * S),
-    ring: (options.durations?.ring ?? base.ringMs) * (0.85 + 0.15 * S),
-    spark: (options.durations?.spark ?? base.sparkMs) * (0.9 + 0.25 * S),
-  };
+  const sparkSpeed   = ballRadius * base.sparkSpeed * S;
+  const sparkGravity = ballRadius * base.sparkGravity * S;
+  const ringDiameter = ballRadius * base.ringDiameter * S;
+  const ringThickness = ballRadius * base.ringThickness * S;
+  const sparkSize    = ballRadius * base.sparkSize * Math.sqrt(S);
+  const flashDiameter = ballRadius * 2 * S;
 
-  const sparkCount = Math.max(
-    2,
-    Math.round((options.sparkCount ?? base.sparkCount) * S),
-  );
+  // ---------- pooled actors (composite) ----------
+  const pool = makePool<Actor>(
+    () => {
+      // Materials are PER-ACTOR (so alphas/brightness don’t clash across bursts)
+      const makeMat = (name: string, intensity: number) => {
+        const m = new StandardMaterial(name, scene);
+        m.disableLighting = true;
+        m.diffuseColor.set(0, 0, 0);
+        m.specularColor.set(0, 0, 0);
+        // default color will be overridden per-trigger from the ball tint
+        m.emissiveColor.set(1, 1, 1);
+        m.alpha = 0;
+        m.alphaMode = Constants.ALPHA_ADD;
+        m.backFaceCulling = false;
+        m.separateCullingPass = true;
+        return m;
+      };
 
-  const sparkSpeed =
-    ballRadius * (base.sparkSpeed * (options.speedMul ?? 1) * S);
-  const sparkGravity =
-    ballRadius * (base.sparkGravity * (options.gravityMul ?? 1) * S);
+      const flashMat = makeMat("fx-burst-flash", 1.0 * I);
+      const ringMat  = makeMat("fx-burst-ring", 1.2 * I);
+      const sparkMat = makeMat("fx-burst-spark", 1.0 * I);
 
-  const ringDiameter = ballRadius * (base.ringDiameter * S);
-  const ringThickness = ballRadius * (base.ringThickness * S);
-  const sparkSize = ballRadius * (base.sparkSize * Math.sqrt(S)); // gentle growth
-
-  const colors = {
-    core: options.colors?.core ?? DEFAULT_CORE.scale(I),
-    ring: options.colors?.ring ?? DEFAULT_RING.scale(I * 1.2),
-    spark: options.colors?.spark ?? DEFAULT_SPARK.scale(I),
-  };
-
-  const glowPeak = options.glowPeak ?? Math.max(glow.intensity, 1.5 + 0.4 * I);
-
-  // -------- materials (once) --------
-  const flashMat = (() => {
-    const m = new StandardMaterial("fx-burst-flash", scene);
-    m.disableLighting = true;
-    m.diffuseColor = Color3.Black();
-    m.specularColor = Color3.Black();
-    m.emissiveColor = colors.core.clone();
-    m.alpha = 0.65;
-    m.alphaMode = Constants.ALPHA_ADD;
-    return m;
-  })();
-  const ringMat = (() => {
-    const m = new StandardMaterial("fx-burst-ring", scene);
-    m.disableLighting = true;
-    m.diffuseColor = Color3.Black();
-    m.specularColor = Color3.Black();
-    m.emissiveColor = colors.ring.clone();
-    m.alpha = 0.35;
-    m.alphaMode = Constants.ALPHA_ADD;
-    return m;
-  })();
-  const sparkMat = (() => {
-    const m = new StandardMaterial("fx-burst-spark", scene);
-    m.disableLighting = true;
-    m.diffuseColor = Color3.Black();
-    m.specularColor = Color3.Black();
-    m.emissiveColor = colors.spark.clone();
-    m.alpha = 0.9;
-    m.alphaMode = Constants.ALPHA_ADD;
-    return m;
-  })();
-
-  function animateFlash(origin: Vector3) {
-    const mesh = MeshBuilder.CreateSphere(
-      "fx-flash",
-      {
-        diameter: ballRadius * 2 * S,
-        segments: 12,
-      },
-      scene,
-    );
-    mesh.material = flashMat;
-    mesh.isPickable = false;
-    mesh.position.copyFrom(origin);
-    mesh.scaling.set(1, 1, 1);
-
-    const baseGlow = glow.intensity;
-    const peakGlow = glowPeak;
-
-    const t0 = performance.now();
-    const sub = scene.onBeforeRenderObservable.add(() => {
-      const t = clamp01((performance.now() - t0) / durations.flash);
-      const fade = easeOutQuad(1 - t);
-      mesh.scaling.set(1 + 1.1 * t, 1 + 0.6 * t, 1 + 0.3 * t);
-      flashMat.alpha = 0.65 * fade;
-      glow.intensity =
-        baseGlow + (peakGlow - baseGlow) * (1 - (1 - t) * (1 - t));
-      if (t >= 1) {
-        glow.intensity = baseGlow;
-        scene.onBeforeRenderObservable.remove(sub);
-        mesh.dispose();
-      }
-    });
-  }
-
-  function animateRing(origin: Vector3) {
-    const torus = MeshBuilder.CreateTorus(
-      "fx-ring",
-      {
-        diameter: ringDiameter,
-        thickness: ringThickness,
-        tessellation: 48,
-      },
-      scene,
-    );
-    torus.material = ringMat;
-    torus.isPickable = false;
-    torus.position.copyFrom(origin);
-    torus.rotation.x = Math.PI / 2;
-    torus.scaling.set(0.2, 0.2, 0.2);
-
-    const t0 = performance.now();
-    const sub = scene.onBeforeRenderObservable.add(() => {
-      const t = clamp01((performance.now() - t0) / durations.ring);
-      const s = 0.2 + 2.8 * easeOutQuad(t);
-      torus.scaling.set(s, (ringThickness / (ballRadius * 0.05)) * 0.05, s); // keep visually thin
-      ringMat.alpha = 0.35 * (1 - t);
-      if (t >= 1) {
-        scene.onBeforeRenderObservable.remove(sub);
-        torus.dispose();
-      }
-    });
-  }
-
-  function animateSparks(origin: Vector3) {
-    const t0 = performance.now();
-    const sparks = Array.from({ length: sparkCount }, () => {
-      const mesh = MeshBuilder.CreateSphere(
-        "fx-spark",
-        { diameter: sparkSize, segments: 6 },
+      // Flash (sphere)
+      const flash = MeshBuilder.CreateSphere(
+        "fx-burst:flash",
+        { diameter: flashDiameter, segments: 12 },
         scene,
       );
-      mesh.material = sparkMat;
-      mesh.isPickable = false;
-      mesh.position.copyFrom(origin);
+      flash.material = flashMat;
+      flash.isPickable = false;
+      flash.isVisible = false;
+
+      // Ring (torus)
+      const ring = MeshBuilder.CreateTorus(
+        "fx-burst:ring",
+        { diameter: ringDiameter, thickness: ringThickness, tessellation: 48 },
+        scene,
+      );
+      ring.material = ringMat;
+      ring.isPickable = false;
+      ring.isVisible = false;
+      ring.rotation.x = Math.PI / 2;
+      // keep visually thin as it grows — constant Y scale proxy
+      const ringYScale = (ringThickness / (ballRadius * 0.05)) * 0.05;
+
+      // Sparks (pre-created)
+      const sparks: Spark[] = Array.from({ length: base.sparkCount }, () => {
+        const m = MeshBuilder.CreateSphere(
+          "fx-burst:spark",
+          { diameter: sparkSize, segments: 6 },
+          scene,
+        );
+        m.material = sparkMat;
+        m.isPickable = false;
+        m.isVisible = false;
+        return { mesh: m, v: new Vector3() };
+      });
+
+      return { flash, ring, sparks, mats: { flash: flashMat, ring: ringMat, spark: sparkMat }, ringYScale };
+    },
+    // reset (on release)
+    (a) => {
+      a.flash.isVisible = false; a.ring.isVisible = false;
+      a.mats.flash.alpha = 0; a.mats.ring.alpha = 0; a.mats.spark.alpha = 0;
+      a.flash.scaling.set(1, 1, 1);
+      a.ring.scaling.set(0.2, a.ringYScale, 0.2);
+      for (const s of a.sparks) {
+        s.mesh.isVisible = false;
+        s.mesh.scaling.set(1, 1, 1);
+        s.v.setAll(0);
+      }
+    },
+    // dispose
+    (a) => {
+      a.flash.dispose(false, true);
+      a.ring.dispose(false, true);
+      for (const s of a.sparks) s.mesh.dispose(false, true);
+      a.mats.flash.dispose();
+      a.mats.ring.dispose();
+      a.mats.spark.dispose();
+    },
+  );
+  pool.warm(cfg.burst.poolSize);
+
+  // ---------- active list + central ticker ----------
+  const active: Burst[] = [];
+  let unsub: Unsub | null = null;
+
+  function ensureTicker() {
+    if (unsub) return;
+    unsub = addTicker((dt) => {
+      if (active.length === 0) {
+        unsub = null;
+        return false;
+      }
+      const dtMs = dt * 1000;
+
+      for (let i = active.length - 1; i >= 0; --i) {
+        const b = active[i];
+        b.ageMs += dtMs;
+
+        // Timelines
+        const tF = clamp01(b.ageMs / b.lifeFlash);
+        const tR = clamp01(b.ageMs / b.lifeRing);
+        const tS = clamp01(b.ageMs / b.lifeSpark);
+
+        // Flash: quick pop + fade
+        {
+          const fade = easeOutQuad(1 - tF);
+          const sX = 1 + 1.1 * tF, sY = 1 + 0.6 * tF, sZ = 1 + 0.3 * tF;
+          b.actor.flash.scaling.set(sX, sY, sZ);
+          b.actor.mats.flash.alpha = 0.65 * fade;
+        }
+
+        // Ring: expand, keep visually thin
+        {
+          const s = 0.2 + 2.8 * easeOutQuad(tR);
+          b.actor.ring.scaling.set(s, b.actor.ringYScale, s);
+          b.actor.mats.ring.alpha = 0.35 * (1 - tR);
+        }
+
+        // Sparks: ballistic fade
+        {
+          const dtSec = dt;
+          const fade = 1 - tS;
+          for (const s of b.actor.sparks) {
+            s.v.y += sparkGravity * dtSec;
+            const dx = s.v.x * dtSec, dy = s.v.y * dtSec, dz = s.v.z * dtSec;
+            s.mesh.position.addInPlaceFromFloats(dx, dy, dz);
+            const k = 0.25 + 0.75 * fade;
+            s.mesh.scaling.set(k, k, k);
+          }
+          b.actor.mats.spark.alpha = 0.9 * fade;
+        }
+
+        // Done?
+        if (tF >= 1 && tR >= 1 && tS >= 1) {
+          active.splice(i, 1);
+          pool.release(b.actor);
+        }
+      }
+      return true;
+    });
+  }
+
+  function spawn(x: number, y: number, z: number) {
+    let actor = pool.acquire();
+    if (!actor) {
+      const oldest = active.shift();
+      if (oldest) {
+        pool.release(oldest.actor);
+        actor = pool.acquire();
+      }
+    }
+    if (!actor) return;
+
+    // === Per-trigger tint: read from current ball material ===
+    const tint = getBallTint(ballMesh);
+    actor.mats.flash.emissiveColor.copyFrom(tint).scaleInPlace(1.0 * I);
+    actor.mats.ring.emissiveColor.copyFrom(tint).scaleInPlace(1.2 * I);
+    actor.mats.spark.emissiveColor.copyFrom(tint).scaleInPlace(1.0 * I);
+
+    // Position & (re)arm meshes
+    actor.flash.position.set(x, y, z);
+    actor.ring.position.set(x, y, z);
+    actor.flash.isVisible = true;
+    actor.ring.isVisible = true;
+    actor.mats.flash.alpha = 0;
+    actor.mats.ring.alpha = 0;
+    actor.flash.scaling.set(1, 1, 1);
+    actor.ring.scaling.set(0.2, actor.ringYScale, 0.2);
+
+    // Sparks: random radial spread
+    for (const s of actor.sparks) {
+      s.mesh.position.set(x, y, z);
+      s.mesh.isVisible = true;
       const ang = Math.random() * Math.PI * 2;
-      const v = new Vector3(
-        Math.cos(ang),
-        0.35 + Math.random() * 0.25,
-        Math.sin(ang),
-      ).scale(sparkSpeed);
-      return { mesh, v };
+      s.v.set(
+        Math.cos(ang) * sparkSpeed,
+        (0.35 + Math.random() * 0.25) * sparkSpeed,
+        Math.sin(ang) * sparkSpeed,
+      );
+    }
+
+    active.push({
+      actor,
+      ageMs: 0,
+      lifeFlash: base.flashMs,
+      lifeRing: base.ringMs,
+      lifeSpark: base.sparkMs,
     });
 
-    const sub = scene.onBeforeRenderObservable.add(() => {
-      const dt = scene.getEngine().getDeltaTime() / 1000;
-      const age = performance.now() - t0;
-      const life01 = clamp01(age / durations.spark);
-      const fade = 1 - life01;
-
-      for (const s of sparks) {
-        s.v.y += sparkGravity * dt;
-        s.mesh.position.addInPlace(s.v.scale(dt));
-        const k = 0.25 + 0.75 * fade;
-        s.mesh.scaling.set(k, k, k);
-        sparkMat.alpha = 0.9 * fade;
-      }
-      if (life01 >= 1) {
-        scene.onBeforeRenderObservable.remove(sub);
-        for (const s of sparks) s.mesh.dispose();
-      }
-    });
+    ensureTicker();
   }
 
   function trigger(x: number, y: number, z: number) {
     incHide(ballMesh);
-    const p = new Vector3(x, y, z);
-    animateFlash(p);
-    animateRing(p);
-    animateSparks(p);
+    spawn(x, y, z);
   }
 
   function dispose() {
-    flashMat.dispose();
-    ringMat.dispose();
-    sparkMat.dispose();
+    if (unsub) { unsub(); unsub = null; }
+    active.length = 0;
+    pool.clear();
   }
 
   return { trigger, dispose };
