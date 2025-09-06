@@ -1,4 +1,4 @@
-// src/client/FX/fxUtils.ts
+// src/client/fx/utils.ts
 import type { Scene } from "@babylonjs/core/scene";
 import { GlowLayer } from "@babylonjs/core/Layers/glowLayer";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";

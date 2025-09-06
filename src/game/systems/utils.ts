@@ -1,9 +1,10 @@
 // src/game/systems/utils.ts
 import type { GameState } from "@game/model/state";
 
-export function clampZ(s: GameState, z: number): number {
-  const max = s.bounds.halfWidthZ - s.bounds.ballRadius;
-  return Math.max(-max, Math.min(max, z));
+export function clampZ(z: number, min: number, max: number): number {
+  if (z < min) return min;
+  if (z > max) return max;
+  return z;
 }
 
 export function isServePhase(p: GameState["phase"]): boolean {

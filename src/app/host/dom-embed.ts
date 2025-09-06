@@ -1,5 +1,4 @@
 // src/app/host/dom-embed.ts
-// Keep render-only side effects here
 import "@client/ui/tailwind.css";
 import "@client/babylon-register"; // Babylon component registration
 

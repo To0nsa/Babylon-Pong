@@ -64,7 +64,11 @@ export function collidePaddle(s: GameState, dt: number): GameState {
       ...s,
       ball: {
         x: plane,
-        z: clampZ(s, zHit),
+        z: clampZ(
+          zHit,
+          -(s.bounds.halfWidthZ - s.bounds.ballRadius),
+          +(s.bounds.halfWidthZ - s.bounds.ballRadius)
+        ),
         vx: -vx,
         vz: vz + pvz * params.zEnglish,
       },

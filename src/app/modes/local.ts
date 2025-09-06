@@ -24,11 +24,9 @@ import {
   tableTennisRules,
 } from "@game";
 
-import {
-  pickInitialServer,
-  randomSeed,
-  SERVE_SELECT_TOTAL_MS
-} from "@shared";
+import { pickInitialServer, SERVE_SELECT_TOTAL_MS } from "@shared";
+import { deriveSeed32 } from "@shared/utils/random";
+import { nextLocalMatchSeed } from "@app/seed";
 
 interface PongInstance {
   start(): void;
@@ -37,10 +35,6 @@ interface PongInstance {
 
 export function createLocalApp(canvas: HTMLCanvasElement): PongInstance {
   canvas.tabIndex = 1;
-
-  // Seed + initial server (non-deterministic seed for local play only)
-  const matchSeed = randomSeed();
-  const initialServer = pickInitialServer(matchSeed);
 
   // Engine/scene/world
   const { engine, engineDisposable } = createEngine(canvas);
@@ -57,7 +51,7 @@ export function createLocalApp(canvas: HTMLCanvasElement): PongInstance {
   // Bounds once (render → headless)
   const { bounds, zMax } = computeBounds(world);
 
-  // FX manager + visual bounce helper
+  // FX manager
   const fx = new FXManager(scene, {
     wallZNorth: +zMax,
     wallZSouth: -zMax,
@@ -65,16 +59,8 @@ export function createLocalApp(canvas: HTMLCanvasElement): PongInstance {
     ballRadius: bounds.ballRadius,
     tableTop: table.tableTop,
   });
-  const Bounces = createBounces(
-    ball.mesh,
-    table.tableTop.position.y,
-    bounds.ballRadius,
-    bounds.halfLengthX,
-    left.mesh,
-    right.mesh,
-  );
 
-  // Ruleset + match controller
+  // Ruleset + match controller config
   const RULES = tableTennisRules({
     match: {
       bestOf: 5,
@@ -83,6 +69,35 @@ export function createLocalApp(canvas: HTMLCanvasElement): PongInstance {
       alternateInitialServerEachGame: true,
     },
   });
+
+  // === Deterministic per-match seed (depends on rules + table size) ===
+  const rulesetCrc = deriveSeed32(
+    RULES.game.targetScore,
+    RULES.game.winBy,
+    RULES.game.servesPerTurn,
+    RULES.game.deuceServesPerTurn,
+    RULES.match.bestOf,
+    RULES.match.switchEndsEachGame ? 1 : 0,
+    RULES.match.decidingGameMidSwapAtPoints ?? 0,
+    RULES.match.alternateInitialServerEachGame ? 1 : 0,
+  );
+  const tableW = bounds.halfLengthX * 2;
+  const tableH = bounds.halfWidthZ * 2;
+  const matchSeed = nextLocalMatchSeed(rulesetCrc, tableW, tableH);
+  const initialServer = pickInitialServer(matchSeed);
+
+  // Visual bounce helper — seeded per match (deterministic variety)
+  const Bounces = createBounces(
+    ball.mesh,
+    table.tableTop.position.y,
+    bounds.ballRadius,
+    bounds.halfLengthX,
+    left.mesh,
+    right.mesh,
+    matchSeed,
+  );
+
+  // Match controller
   const match = createMatchController(bounds, RULES, initialServer);
 
   // Headless state (boot aligned to chosen initial server)

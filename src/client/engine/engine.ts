@@ -1,4 +1,4 @@
-// src/core/engine/Engine.ts
+// src/client/engine/engine.ts
 import { Engine } from "@babylonjs/core/Engines/engine";
 import type { EngineOptions } from "@babylonjs/core/Engines/thinEngine";
 

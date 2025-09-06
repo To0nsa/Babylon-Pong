@@ -1,11 +1,13 @@
-// src/client/FX/Burst.ts
+// src/client/fx/burst.ts
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { Color3, Vector3 } from "@babylonjs/core/Maths/math";
 import { Constants } from "@babylonjs/core/Engines/constants";
+import { clamp01 } from "@shared/utils/math";
 import type { FXContext } from "./context";
 import { incHide, easeOutQuad } from "./utils";
+
 // If you have FXColors, you can keep using it; otherwise pick colors here:
 const DEFAULT_CORE = new Color3(1.0, 0.7, 0.2); // warm orange
 const DEFAULT_RING = new Color3(1.2, 0.9, 0.5);
@@ -132,7 +134,7 @@ export function createGlowBurstFX(
 
     const t0 = performance.now();
     const sub = scene.onBeforeRenderObservable.add(() => {
-      const t = Math.min(1, (performance.now() - t0) / durations.flash);
+      const t = clamp01((performance.now() - t0) / durations.flash);
       const fade = easeOutQuad(1 - t);
       mesh.scaling.set(1 + 1.1 * t, 1 + 0.6 * t, 1 + 0.3 * t);
       flashMat.alpha = 0.65 * fade;
@@ -164,7 +166,7 @@ export function createGlowBurstFX(
 
     const t0 = performance.now();
     const sub = scene.onBeforeRenderObservable.add(() => {
-      const t = Math.min(1, (performance.now() - t0) / durations.ring);
+      const t = clamp01((performance.now() - t0) / durations.ring);
       const s = 0.2 + 2.8 * easeOutQuad(t);
       torus.scaling.set(s, (ringThickness / (ballRadius * 0.05)) * 0.05, s); // keep visually thin
       ringMat.alpha = 0.35 * (1 - t);
@@ -198,7 +200,7 @@ export function createGlowBurstFX(
     const sub = scene.onBeforeRenderObservable.add(() => {
       const dt = scene.getEngine().getDeltaTime() / 1000;
       const age = performance.now() - t0;
-      const life01 = Math.min(1, age / durations.spark);
+      const life01 = clamp01(age / durations.spark);
       const fade = 1 - life01;
 
       for (const s of sparks) {

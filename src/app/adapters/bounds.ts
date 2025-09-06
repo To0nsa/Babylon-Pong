@@ -1,3 +1,4 @@
+// src/app/adapters/bounds.ts
 import type { WorldKit } from "@client/scene/scene";
 import type { GameState } from "@game/model/state";
 

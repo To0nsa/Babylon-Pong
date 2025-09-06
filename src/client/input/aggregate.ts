@@ -9,6 +9,8 @@ export { blockInputFor, isInputBlocked };
 
 export type Detach = () => void;
 
+const INTENT: InputIntent = { leftAxis: 0, rightAxis: 0 };
+
 let controlsMirrored = false;
 export function setControlsMirrored(v: boolean) {
   controlsMirrored = v;
@@ -27,18 +29,22 @@ export function attachLocalInput(el: HTMLElement): Detach {
   };
 }
 
-/** Merge touch + keyboard into your headless InputIntent. */
 export function readIntent(): InputIntent {
   if (isInputBlocked()) return ZeroIntent;
 
   const { leftAxisTouch, rightAxisTouch } = readTouchAxes();
   const { leftAxisKey, rightAxisKey } = readKeyboardAxes();
 
-  const leftAxis = leftAxisTouch !== 0 ? leftAxisTouch : leftAxisKey;
+  const leftAxis  = leftAxisTouch  !== 0 ? leftAxisTouch  : leftAxisKey;
   const rightAxis = rightAxisTouch !== 0 ? rightAxisTouch : rightAxisKey;
 
-  // When sides are swapped, swap which paddle each player controls.
-  return controlsMirrored
-    ? { leftAxis: rightAxis, rightAxis: leftAxis }
-    : { leftAxis, rightAxis };
+  // When sides are swapped, swap which paddle each player controls (P1/P2 stable).
+  if (controlsMirrored) {
+    INTENT.leftAxis = rightAxis; // drives P1
+    INTENT.rightAxis = leftAxis; // drives P2
+  } else {
+    INTENT.leftAxis = leftAxis;   // drives P1
+    INTENT.rightAxis = rightAxis; // drives P2
+  }
+  return INTENT;
 }

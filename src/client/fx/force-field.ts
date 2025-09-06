@@ -1,4 +1,4 @@
-// src/client/FX/ForceField.ts
+// src/client/fx/force-field.ts
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";

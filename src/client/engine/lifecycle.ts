@@ -1,4 +1,4 @@
-// client/engine/Lifecycle.ts
+// client/engine/lifecycle.ts
 import type { Engine } from "@babylonjs/core/Engines/engine";
 import type { Scene } from "@babylonjs/core/scene";
 

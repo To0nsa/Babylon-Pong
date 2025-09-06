@@ -1,4 +1,4 @@
-// src/client/FX/ServeSelect.ts
+// src/client/fx/serve-select.ts
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { Constants } from "@babylonjs/core/Engines/constants";

@@ -8,14 +8,13 @@ export type { FrameEvents } from "./protocol/events";
 export type { InputIntent } from "./protocol/input";
 
 export {
-  LcgRng,
-  deriveSeed,
-  randomSeed,
+  xorshift32,
+  XorShift32,
+  deriveSeed32,
   pickInitialServer,
   type MatchSeed,
-} from "./utils/rng";
+} from "./utils/random";
 
 export { RafTicker, type RafTickFn } from "./utils/raf-ticker";
-export { Ticker, type TickFn } from "./utils/ticker";
 export { type Disposable } from "./utils/disposable";
 export { default as Logger } from "./utils/logger";

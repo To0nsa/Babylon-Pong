@@ -1,4 +1,4 @@
-// src/client/FX/context.ts
+// src/client/fx/context.ts
 import type { Scene } from "@babylonjs/core/scene";
 import type { GlowLayer } from "@babylonjs/core/Layers/glowLayer";
 import { ensureGlow } from "./utils";

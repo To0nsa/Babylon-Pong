@@ -1,4 +1,4 @@
-// src/client/engine/RenderLoop.ts
+// src/client/engine/render-loop.ts
 import type { Engine } from "@babylonjs/core/Engines/engine";
 import type { Scene } from "@babylonjs/core/scene";
 

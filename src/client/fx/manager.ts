@@ -1,4 +1,4 @@
-// src/client/FX/manager.ts
+// src/client/fx/manager.ts
 import type { Scene } from "@babylonjs/core/scene";
 import type { Vector3 } from "@babylonjs/core/Maths/math";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";

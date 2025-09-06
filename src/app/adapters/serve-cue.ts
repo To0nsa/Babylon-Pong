@@ -1,3 +1,4 @@
+// src/app/adapters/serve-cue.ts
 import type { Phase } from "@game/model/state";
 import { decHide } from "@client/fx/utils";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";

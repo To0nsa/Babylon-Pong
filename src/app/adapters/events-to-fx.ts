@@ -1,4 +1,4 @@
-// src/client/entry/eventsToFX.ts
+// src/app/adapters/events-to-fx.ts
 import type { FrameEvents } from "@shared/protocol/events";
 import type { FXManager } from "@client/fx/manager";
 

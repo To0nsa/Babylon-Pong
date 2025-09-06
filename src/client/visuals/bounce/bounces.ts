@@ -1,6 +1,6 @@
 // src/client/visuals/Bounces.ts
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
-import { deriveSeed, LcgRng } from "@shared/utils/rng";
+import { deriveSeed32, xorshift32 } from "@shared/utils/random";
 import { clamp01, quadBezierY } from "@client/visuals/bounce/math";
 import { aimYWithFraction } from "@client/visuals/bounce/aim-paddle";
 
@@ -24,6 +24,7 @@ export function createBounces(
   halfLengthX: number,
   leftPaddle: AbstractMesh,
   rightPaddle: AbstractMesh,
+  matchSeed: number,
 ) {
   const baseY = tableTopY + ballRadius / 2;
   const paddleHeight = leftPaddle.getBoundingInfo().boundingBox.extendSize.y;
@@ -42,8 +43,8 @@ export function createBounces(
   // absolute goal-line x (positive magnitude); left goal is -goalX, right is +goalX
   const goalX = halfLengthX + ballRadius;
 
-  const rng = new LcgRng(deriveSeed(halfLengthX * 1000));
-  const rand01 = () => rng.next();
+  const seed = deriveSeed32((halfLengthX * 1000) | 0, matchSeed >>> 0);
+  const rand01 = xorshift32(seed);
 
   const nextLandFraction = (): number => {
     const offset = (rand01() - 0.5) * JITTER_RANGE;

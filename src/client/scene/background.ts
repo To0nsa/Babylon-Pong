@@ -5,6 +5,8 @@ import { Effect } from "@babylonjs/core/Materials/effect";
 import { Color3 } from "@babylonjs/core/Maths/math.color";
 import type { Scene } from "@babylonjs/core/scene";
 
+import { clamp01 } from "@shared/utils/math";
+
 export interface SpaceBackgroundOptions {
   /** Approx. fraction of pixels that become stars (0.0–1.0). Sensible range: 0.0005–0.01 */
   starDensity?: number;
@@ -104,7 +106,7 @@ export function addSpaceBackground(
 
   material.setColor3("uStarColor", starColor);
   material.setColor3("uBgColor", backgroundColor);
-  material.setFloat("uDensity", Math.max(0.0, Math.min(1.0, starDensity)));
+  material.setFloat("uDensity", clamp01(starDensity));
   material.setFloat("uIntensity", Math.max(0.0, starIntensity));
 
   const sky = MeshBuilder.CreateSphere(
