@@ -1,22 +1,18 @@
-// src/client/entry/embed.ts
+// src/app/modes/local.ts
 import { createEngine } from "@client/engine/engine";
 import { createLifecycle } from "@client/engine/lifecycle";
 import { createWorld } from "@client/scene/scene";
-import Logger from "@shared/utils/logger";
-
-import { attachLocalInput, readIntent } from "@client/input/aggregate";
-import { toggleControlsMirrored, blockInputFor } from "@client/input/aggregate";
+import { attachLocalInput, readIntent, toggleControlsMirrored, blockInputFor } from "@client/input/aggregate";
 import { createBounces } from "@client/visuals/bounce/bounces";
-
 import { FXManager } from "@client/fx/manager";
-
 import { createScoreboard } from "@client/ui/scoreboard";
+import { updateHUD } from "@client/ui/hud-binding";
+import { createPaddleAnimator } from "@client/visuals/animate-paddle";
 
 import { computeBounds } from "@app/adapters/bounds";
-import { createPaddleAnimator } from "@client/visuals/animate-paddle";
 import { detectEnteredServe, onEnteredServe } from "@app/adapters/serve-cue";
-import { updateHUD } from "@client/ui/hud-binding";
 import { applyFrameEvents } from "@app/adapters/events-to-fx";
+import { mapStateForPlayerRows, mapHistoryForPlayers } from "@app/adapters/hud-map";
 
 import {
   type GameState,
@@ -30,9 +26,8 @@ import {
 
 import {
   pickInitialServer,
-  type MatchSeed,
-  SERVE_SELECT_TOTAL_MS,
-  type TableEnd,
+  randomSeed,
+  SERVE_SELECT_TOTAL_MS
 } from "@shared";
 
 interface PongInstance {
@@ -40,70 +35,29 @@ interface PongInstance {
   destroy(): void;
 }
 
-Logger.setLevel("debug");
-
-function localMatchSeed(): MatchSeed {
-  const buf = new Uint32Array(1);
-  crypto.getRandomValues(buf);
-  return buf[0] >>> 0;
-}
-
 export function createLocalApp(canvas: HTMLCanvasElement): PongInstance {
   canvas.tabIndex = 1;
 
-  const matchSeed = localMatchSeed();
+  // Seed + initial server (non-deterministic seed for local play only)
+  const matchSeed = randomSeed();
+  const initialServer = pickInitialServer(matchSeed);
 
+  // Engine/scene/world
   const { engine, engineDisposable } = createEngine(canvas);
   const world = createWorld(engine);
-  const {
-    scene,
-    paddles: { left, right },
-    table,
-    ball,
-  } = world;
+  const { scene, paddles: { left, right }, table, ball } = world;
 
+  // HUD (DOM overlay anchored to canvas)
   const hud = createScoreboard();
   hud.attachToCanvas(canvas);
 
-  // ── HUD: player-pinned rows (top = P1, bottom = P2) ──────────────────────────
-  const names = { east: "Magenta", west: "Green" };
-
-  // Track actual side swaps to know when the players have crossed.
-  // false = initial orientation (P1 on east/top row)
-  let rowsMirrored = false;
-
-  // Convert end-based state to player rows when flipped is true
-  const asPlayerRows = (s: GameState, flipped: boolean): GameState => {
-    if (!flipped) return s;
-    return {
-      ...s,
-      points: { east: s.points.west, west: s.points.east },
-      server: (s.server === "east" ? "west" : "east") as TableEnd,
-    };
-  };
-
-  // Normalize finished games so each row always refers to the same player
-  const mapHistoryForPlayers = (
-    history: ReturnType<typeof match.getSnapshot>["gamesHistory"] | undefined,
-  ) => {
-    const list = history ?? [];
-    if (!RULES.match.switchEndsEachGame) return list;
-    return list.map((g) =>
-      g.gameIndex % 2 === 0
-        ? {
-            gameIndex: g.gameIndex,
-            east: g.west,
-            west: g.east,
-            winner: (g.winner === "east" ? "west" : "east") as TableEnd,
-          }
-        : g,
-    );
-  };
+  // Player display names (local defaults)
+  const names = { east: "Magenta", west: "Green" } as const;
 
   // Bounds once (render → headless)
   const { bounds, zMax } = computeBounds(world);
 
-  // FX manager (centralized)
+  // FX manager + visual bounce helper
   const fx = new FXManager(scene, {
     wallZNorth: +zMax,
     wallZSouth: -zMax,
@@ -111,8 +65,6 @@ export function createLocalApp(canvas: HTMLCanvasElement): PongInstance {
     ballRadius: bounds.ballRadius,
     tableTop: table.tableTop,
   });
-
-  // Visual bounce helper
   const Bounces = createBounces(
     ball.mesh,
     table.tableTop.position.y,
@@ -122,7 +74,7 @@ export function createLocalApp(canvas: HTMLCanvasElement): PongInstance {
     right.mesh,
   );
 
-  // ruleset + match controller (best-of-5 by default)
+  // Ruleset + match controller
   const RULES = tableTennisRules({
     match: {
       bestOf: 5,
@@ -131,39 +83,39 @@ export function createLocalApp(canvas: HTMLCanvasElement): PongInstance {
       alternateInitialServerEachGame: true,
     },
   });
-
-  const initialServer = pickInitialServer(matchSeed);
   const match = createMatchController(bounds, RULES, initialServer);
 
   // Headless state (boot aligned to chosen initial server)
-  let state = createInitialState(bounds, initialServer);
+  let state: GameState = createInitialState(bounds, initialServer);
 
   // Input
   const detachInput = attachLocalInput(canvas);
   scene.onDisposeObservable.add(detachInput);
 
-  // Tiny animator gate
+  // Simple paddle-centering tween gate (kept in visuals)
   const paddleAnim = createPaddleAnimator(scene, left.mesh, right.mesh);
 
-  // Intro gate
-  let introUntil = 0; // wall-clock ms until which logic is gated
+  // Track actual side swaps to know when the players have crossed (for HUD row mapping)
+  let rowsMirrored = false;
+
+  // Intro gate (wall-clock ms until which logic is gated)
+  let introUntil = 0;
+
+  // Fixed-step lifecycle (simulation cadence is set here)
   const loop = createLifecycle(engine, scene, {
     logicHz: 60,
     update: (dtMs) => {
-      if (performance.now() < introUntil) {
-        // Skip physics while the flicker runs; render still updates via Lifecycle.
-        return;
-      }
+      if (performance.now() < introUntil) return; // skip physics during intro FX
       const dt = Math.min(0.05, dtMs / 1000);
 
       // 1) Input → paddles
       state = stepPaddles(state, readIntent(), dt);
 
-      // 2) Rally / pauses / serve
+      // 2) Physics/flow
       const prevPhase = state.phase;
       const stepped = handleSteps(state, dt);
 
-      // 3) Match controller reacts to scoring / game over / match flow
+      // 3) Match controller (scoring/game flow/swap sides)
       const mc = match.afterPhysicsStep(stepped.next);
       state = mc.state;
 
@@ -172,36 +124,27 @@ export function createLocalApp(canvas: HTMLCanvasElement): PongInstance {
         toggleControlsMirrored();
 
         // color/skin follows player
-        {
-          const m = left.mesh.material;
-          left.mesh.material = right.mesh.material;
-          right.mesh.material = m;
-        }
+        const m = left.mesh.material;
+        left.mesh.material = right.mesh.material;
+        right.mesh.material = m;
 
-        // Players actually crossed sides → toggle parity for HUD mapping
+        // HUD mapping parity
         rowsMirrored = !rowsMirrored;
 
-        // nice cross-over cue
+        // crossover cue
         paddleAnim.cue(180);
       }
 
-      // 4) Entered serve? Trigger cues (compare with final phase after controller)
+      // 4) Entered serve? Trigger cues
       const entered = detectEnteredServe(prevPhase, state.phase);
       if (entered) {
-        onEnteredServe(entered, {
-          ballMesh: ball.mesh,
-          Bounces,
-          paddleAnim,
-          blockInputFor,
-        });
+        onEnteredServe(entered, { ballMesh: ball.mesh, Bounces, paddleAnim, blockInputFor });
       }
 
       // 5) HUD (player-pinned)
       const snap = match.getSnapshot();
-
-      const stateForHUD = asPlayerRows(state, rowsMirrored);
-      const historyForHUD = mapHistoryForPlayers(snap.gamesHistory);
-
+      const stateForHUD = mapStateForPlayerRows(state, rowsMirrored);
+      const historyForHUD = mapHistoryForPlayers(snap.gamesHistory, RULES.match.switchEndsEachGame);
       updateHUD(hud, stateForHUD, names, {
         bestOf: snap.bestOf,
         currentGameIndex: snap.currentGameIndex,
@@ -221,12 +164,12 @@ export function createLocalApp(canvas: HTMLCanvasElement): PongInstance {
     },
   });
 
+  // Unified teardown
   scene.onDisposeObservable.add(() => {
     world.dispose();
     fx.dispose();
     hud.dispose();
   });
-
   const destroy = () => {
     loop.stop();
     scene.dispose();
@@ -235,35 +178,25 @@ export function createLocalApp(canvas: HTMLCanvasElement): PongInstance {
 
   return {
     start() {
-      // Pre-roll: run the flicker before letting physics advance.
-      // Hide ball robustly (twice) so we can unhide in stages.
+      // Pre-roll: run serve selection FX, gate input, then arm opening serve.
       void import("@client/fx/utils").then(({ incHide }) => {
-        incHide(ball.mesh);
-        incHide(ball.mesh);
+        incHide(ball.mesh); incHide(ball.mesh);
       });
 
-      // Avoid user moving paddles during pre-roll.
       blockInputFor(SERVE_SELECT_TOTAL_MS + 200);
       introUntil = performance.now() + SERVE_SELECT_TOTAL_MS;
 
-      // Begin rendering immediately so the effect is visible.
       loop.start();
 
-      // Play the intro flicker async; when it ends, arm the opening serve.
       void fx.serveSelection(initialServer).then(async () => {
-        // Give the ball velocity + correct serve phase
         state = serveFrom(initialServer, state);
-        // No extra pause after the intro
         state = { ...state, tPauseBtwPointsMs: 0 };
 
-        // Schedule matching visual bounce path for the chosen side
         const dir = initialServer === "east" ? -1 : 1;
         Bounces.scheduleServe(dir);
 
-        // Fully unhide (we hid twice)
         const { decHide } = await import("@client/fx/utils");
-        decHide(ball.mesh);
-        decHide(ball.mesh);
+        decHide(ball.mesh); decHide(ball.mesh);
       });
     },
     destroy,
