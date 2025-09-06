@@ -63,7 +63,7 @@ export type FXConfig = {
   serveSelect: {
     beatMs: number; // flicker beat
     holdMs: number; // final solid hold
-    alpha: number;  // peak emissive alpha (multiplied by intensity.alphaMul)
+    alpha: number; // peak emissive alpha (multiplied by intensity.alphaMul)
   };
 
   colors: { core: Color3; ring: Color3; spark: Color3 };

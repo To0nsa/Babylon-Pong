@@ -10,8 +10,8 @@ type Unsub = () => void;
 type Shake = {
   ageMs: number;
   lifeMs: number;
-  amp: number;   // radians
-  fxHz: number;  // base frequency
+  amp: number; // radians
+  fxHz: number; // base frequency
   seedX: number; // phase seeds (radians)
   seedY: number;
   seedZ: number;
