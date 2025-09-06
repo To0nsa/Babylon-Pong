@@ -1,10 +1,8 @@
-// src/client/fx/force-field.ts
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { FresnelParameters } from "@babylonjs/core/Materials/fresnelParameters";
 import { Vector3 } from "@babylonjs/core/Maths/math";
-import { Constants } from "@babylonjs/core/Engines/constants";
 
 import type { FXContext } from "./context";
 import type { WallSide } from "@shared/domain/ids";
@@ -15,10 +13,7 @@ import { DEFAULT_FX_CONFIG } from "./config";
 
 type Unsub = () => void;
 
-type Actor = {
-  mesh: Mesh;
-  mat: StandardMaterial;
-};
+type Actor = { mesh: Mesh; mat: StandardMaterial };
 
 type Pulse = {
   actor: Actor;
@@ -39,8 +34,10 @@ export function createForceFieldFX(
 ) {
   const { scene } = ctx;
   const C = cfg.forceField;
-  const globalAlpha = cfg.intensity.alphaMul;
-  const baseRadius = ballRadius * (cfg.forceField.baseRadiusMul ?? 5.0);
+  const globalAlpha = Math.max(0.0001, cfg.intensity.alphaMul || 1);
+
+  // Size is fixed (no speed-based scaling by design)
+  const baseRadius = ballRadius * C.baseRadiusMul;
 
   // ---------- pooled actors (mesh + its own material) ----------
   const pool = makePool<Actor>(
@@ -49,7 +46,7 @@ export function createForceFieldFX(
         "ff-hex",
         {
           radius: baseRadius,
-          tessellation: 6,
+          tessellation: Math.max(3, C.sides | 0),
           sideOrientation: Mesh.DOUBLESIDE,
         },
         scene,
@@ -57,25 +54,25 @@ export function createForceFieldFX(
       mesh.isPickable = false;
       mesh.visibility = 1;
       mesh.isVisible = false;
-      mesh.renderingGroupId = 2;
+      mesh.renderingGroupId = C.render.renderingGroupId;
 
       const mat = new StandardMaterial("ff-hex-core", scene);
       mat.disableLighting = true;
-      mat.emissiveColor = cfg.colors.core.scale(0.4);
+      mat.emissiveColor = cfg.colors.core.clone().scale(C.emissiveScale);
       mat.diffuseColor.set(0, 0, 0);
       mat.specularColor.set(0, 0, 0);
       mat.alpha = 0; // start hidden
       mat.backFaceCulling = false;
       mat.separateCullingPass = true;
       mat.forceDepthWrite = false;
-      mat.zOffset = -1;
+      mat.zOffset = C.render.zOffset;
 
       const fres = new FresnelParameters();
       fres.isEnabled = true;
-      fres.power = 2.0;
-      fres.bias = 0.2;
-      fres.leftColor = cfg.colors.core.scale(1.8);
-      fres.rightColor = cfg.colors.core.scale(1.8);
+      fres.power = C.fresnel.power;
+      fres.bias = C.fresnel.bias;
+      fres.leftColor = cfg.colors.core.clone().scale(C.fresnel.rimScale);
+      fres.rightColor = cfg.colors.core.clone().scale(C.fresnel.rimScale);
       mat.emissiveFresnelParameters = fres;
 
       mesh.material = mat;
@@ -102,12 +99,10 @@ export function createForceFieldFX(
   function ensureTicker() {
     if (unsub) return;
     unsub = addTicker((dt) => {
-      // Auto-stop when no active pulses, but ALSO clear our handle so we can re-arm later.
       if (active.length === 0) {
-        unsub = null; // <- crucial: allow next trigger() to add a new ticker
-        return false; // FXManager will remove this ticker this frame
+        unsub = null;
+        return false;
       }
-
       const dtMs = dt * 1000;
       for (let i = active.length - 1; i >= 0; --i) {
         const p = active[i];
@@ -132,25 +127,22 @@ export function createForceFieldFX(
   function spawn(side: WallSide, x: number, y: number, vzAbs: number) {
     let actor = pool.acquire();
     if (!actor) {
-      // Pool exhausted: recycle oldest for determinism & stability.
       const oldest = active.shift();
       if (oldest) {
         pool.release(oldest.actor);
         actor = pool.acquire();
       }
     }
-    if (!actor) return; // nothing available
+    if (!actor) return;
 
     const z = side === "north" ? wallZNorth : wallZSouth;
 
-    // Keep intensity (alpha) speed-scaled with a gentle saturation curve.
-    const K = 10.0; // knee — tune to taste
-    const norm = vzAbs / (vzAbs + K);
+    // Only intensity scales with speed (gentle knee curve)
+    const norm = vzAbs / (vzAbs + C.speedKnee);
     const alphaPeak = C.peakAlpha * (0.7 + 0.6 * norm);
 
-    // NEW: size is fixed (no speed coupling). Use baseRadiusMul in config to tune overall size.
-    const startScale = 0.85; // compact initial pop
-    const endScale = 1.2; // gentle expansion
+    const startScale = C.scaleStart;
+    const endScale = C.scaleEnd;
 
     // Position & orientation
     actor.mesh.position.copyFromFloats(x, y, z);

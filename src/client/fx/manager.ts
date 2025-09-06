@@ -20,7 +20,7 @@ export type FXManagerOptions = {
   ballMesh: AbstractMesh;
   ballRadius: number;
   tableTop: AbstractMesh;
-  camera: ArcRotateCamera; // NEW
+  camera: ArcRotateCamera;
 };
 
 export class FXManager {
@@ -73,16 +73,12 @@ export class FXManager {
       this.config,
     );
 
-    // Serve selection (central ticker)
+    // Serve selection
     this.serveSelect = createServeSelectionFX(
       this.ctx,
       opts.tableTop,
-      {
-        beatMs: 120,
-        holdMs: 1000,
-        alpha: 0.35 * this.config.intensity.alphaMul,
-      },
       (fn) => this.addTicker(fn),
+      this.config,
     );
   }
 

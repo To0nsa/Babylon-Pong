@@ -1,4 +1,3 @@
-// src/client/fx/camera-shake.ts
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import type { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera";
 import { Scalar } from "@babylonjs/core/Maths/math.scalar";
@@ -11,8 +10,8 @@ type Unsub = () => void;
 type Shake = {
   ageMs: number;
   lifeMs: number;
-  amp: number; // radians
-  fxHz: number; // base frequency
+  amp: number;   // radians
+  fxHz: number;  // base frequency
   seedX: number; // phase seeds (radians)
   seedY: number;
   seedZ: number;
@@ -31,11 +30,12 @@ export function createCameraShakeFX(
   const prevParent = camera.parent as TransformNode | null;
   camera.parent = root;
 
-  // Tunables
+  // Tunables (read from config; keep behavior 1:1 with previous hard-coded values)
   const INT = Math.max(0.001, cfg.intensity.sizeMul || 1);
-  const BASE_MS = 320; // default shake length
-  const BASE_ANG = 0.006 * INT; // ~0.34° at strength=1
-  const BASE_HZ = 160;
+  const P = cfg.cameraShake;
+  const BASE_MS = P.lifeMs;
+  const BASE_ANG = P.ampRad * INT; // intensity scales amplitude as before
+  const BASE_HZ = P.freqHz;
 
   const active: Shake[] = [];
   let unsub: Unsub | null = null;
@@ -81,13 +81,12 @@ export function createCameraShakeFX(
           ampNow *
           (Math.sin(wz * t + s.seedZ) +
             0.5 * Math.sin(0.5 * wz * t + s.seedX)) *
-          0.6; // keep roll gentler
-
+          P.rollScale; // keep roll gentler (configurable)
         if (t01 >= 1) active.splice(i, 1);
       }
 
       // Clamp for overlapping kicks
-      const LIM = BASE_ANG * 2.5;
+      const LIM = BASE_ANG * P.clampMul;
       root.rotation.set(
         Scalar.Clamp(rx, -LIM, LIM),
         Scalar.Clamp(ry, -LIM, LIM),
