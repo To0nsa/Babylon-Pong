@@ -16,7 +16,7 @@ const sideOf = (end: TableEnd): Side => (end === "east" ? "left" : "right");
 export type ServeSelectOptions = {
   beatMs?: number; // default 120
   holdMs?: number; // default 1000
-  alpha?: number;  // default 0.35
+  alpha?: number; // default 0.35
 };
 
 type Overlay = {
@@ -38,12 +38,22 @@ export function createServeSelectionFX(
   tableTop.computeWorldMatrix(true);
   const bb = tableTop.getBoundingInfo().boundingBox;
   const lengthX = bb.extendSizeWorld.x * 2; // total X
-  const widthZ  = bb.extendSizeWorld.z * 2; // total Z
-  const y = tableTop.position.y + 0.003;    // slight lift above top
+  const widthZ = bb.extendSizeWorld.z * 2; // total Z
+  const y = tableTop.position.y + 0.003; // slight lift above top
   const halfX = lengthX / 2;
 
-  const makeHalf = (name: string, sx: number, sz: number, px: number, tint: Color3): Overlay => {
-    const mesh = MeshBuilder.CreateBox(name, { width: sx, depth: sz, height: 0.006 }, scene);
+  const makeHalf = (
+    name: string,
+    sx: number,
+    sz: number,
+    px: number,
+    tint: Color3,
+  ): Overlay => {
+    const mesh = MeshBuilder.CreateBox(
+      name,
+      { width: sx, depth: sz, height: 0.006 },
+      scene,
+    );
     mesh.position.copyFromFloats(px, y, 0);
     mesh.isPickable = false;
     mesh.parent = tableTop.parent;
@@ -63,12 +73,24 @@ export function createServeSelectionFX(
     return { mesh, mat };
   };
 
-  const left  = makeHalf("serveFX-left",  halfX, widthZ, -halfX / 2, Colors.paddleLeft);
-  const right = makeHalf("serveFX-right", halfX, widthZ, +halfX / 2, Colors.paddleRight);
+  const left = makeHalf(
+    "serveFX-left",
+    halfX,
+    widthZ,
+    -halfX / 2,
+    Colors.paddleLeft,
+  );
+  const right = makeHalf(
+    "serveFX-right",
+    halfX,
+    widthZ,
+    +halfX / 2,
+    Colors.paddleRight,
+  );
 
-  const beatMs   = Math.max(40,  options.beatMs ?? 120);
-  const holdMs   = Math.max(0,   options.holdMs ?? 1000);
-  const peakA    = Math.max(0, Math.min(1, options.alpha ?? 0.35));
+  const beatMs = Math.max(40, options.beatMs ?? 120);
+  const holdMs = Math.max(0, options.holdMs ?? 1000);
+  const peakA = Math.max(0, Math.min(1, options.alpha ?? 0.35));
   const flickerMs = Math.max(0, SERVE_SELECT_TOTAL_MS - holdMs);
 
   // ---------- Central ticker state (mirrors old onBeforeRender logic) ----------
@@ -81,12 +103,15 @@ export function createServeSelectionFX(
   } = null;
 
   function stopTicker() {
-    if (unsub) { unsub(); unsub = null; }
+    if (unsub) {
+      unsub();
+      unsub = null;
+    }
   }
 
   function setFinal(target: Side) {
     left.mesh.isVisible = right.mesh.isVisible = true;
-    left.mat.alpha  = target === "left"  ? peakA : 0.0;
+    left.mat.alpha = target === "left" ? peakA : 0.0;
     right.mat.alpha = target === "right" ? peakA : 0.0;
   }
 
@@ -107,17 +132,18 @@ export function createServeSelectionFX(
         // identical beat math to old version
         const i = Math.min(running.beats - 1, Math.floor(t / beatMs));
         const onOppositeFirst = i % 2 === 0; // 0,2,4... = opposite; 1,3,5... = target
-        const active: Side =
-          onOppositeFirst
-            ? (running.target === "left" ? "right" : "left")
-            : running.target;
+        const active: Side = onOppositeFirst
+          ? running.target === "left"
+            ? "right"
+            : "left"
+          : running.target;
 
-        const within = (t % beatMs) / beatMs;           // 0..1 inside the beat
-        const pulse  = 1.0 - easeOutQuad(1 - within);   // quick rise, soft fade
+        const within = (t % beatMs) / beatMs; // 0..1 inside the beat
+        const pulse = 1.0 - easeOutQuad(1 - within); // quick rise, soft fade
         const a = peakA * pulse;
 
         left.mesh.isVisible = right.mesh.isVisible = true;
-        left.mat.alpha  = active === "left"  ? a : 0.0;
+        left.mat.alpha = active === "left" ? a : 0.0;
         right.mat.alpha = active === "right" ? a : 0.0;
 
         return true;
@@ -185,7 +211,9 @@ export function createServeSelectionFX(
         const i = Math.min(beats - 1, Math.floor(t / beatMs));
         const onOppositeFirst = i % 2 === 0;
         const active: Side = onOppositeFirst
-          ? (targetSide === "left" ? "right" : "left")
+          ? targetSide === "left"
+            ? "right"
+            : "left"
           : targetSide;
 
         const within = (t % beatMs) / beatMs;
@@ -193,7 +221,7 @@ export function createServeSelectionFX(
         const alpha = peakA * pulse;
 
         left.mesh.isVisible = right.mesh.isVisible = true;
-        left.mat.alpha  = active === "left"  ? alpha : 0.0;
+        left.mat.alpha = active === "left" ? alpha : 0.0;
         right.mat.alpha = active === "right" ? alpha : 0.0;
         return;
       }

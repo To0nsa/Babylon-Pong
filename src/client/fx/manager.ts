@@ -38,7 +38,11 @@ export class FXManager {
   private _lastTime = 0;
   private readonly _kill: Array<(dt: number) => boolean | void> = [];
 
-  constructor(scene: Scene, opts: FXManagerOptions, config?: Partial<FXConfig>) {
+  constructor(
+    scene: Scene,
+    opts: FXManagerOptions,
+    config?: Partial<FXConfig>,
+  ) {
     this.ctx = createFXContext(scene);
     this.config = { ...DEFAULT_FX_CONFIG, ...(config as FXConfig) };
 
@@ -93,7 +97,8 @@ export class FXManager {
         this._lastTime = now;
         for (const t of this._tickers) if (t(dt) === false) this._kill.push(t);
         if (this._kill.length) {
-          for (let i = 0; i < this._kill.length; i++) this._tickers.delete(this._kill[i]);
+          for (let i = 0; i < this._kill.length; i++)
+            this._tickers.delete(this._kill[i]);
           this._kill.length = 0;
           if (this._tickers.size === 0 && this._tickSub) {
             this.ctx.scene.onBeforeRenderObservable.remove(this._tickSub);
@@ -132,7 +137,8 @@ export class FXManager {
   }
 
   dispose(): void {
-    if (this._tickSub) this.ctx.scene.onBeforeRenderObservable.remove(this._tickSub);
+    if (this._tickSub)
+      this.ctx.scene.onBeforeRenderObservable.remove(this._tickSub);
     this._tickSub = undefined;
     this._tickers.clear();
     this.forceField?.dispose?.();

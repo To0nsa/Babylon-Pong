@@ -10,14 +10,14 @@ export type Pool<T> = {
   release(item: T): void;
   warm(size: number): void;
   clear(): void;
-  size(): number;       // total managed
-  available(): number;  // currently free
+  size(): number; // total managed
+  available(): number; // currently free
 };
 
 export function makePool<T>(
   create: () => T,
-  reset: (t: T) => void,     // called on release before re-queueing
-  dispose: (t: T) => void,   // called by clear()
+  reset: (t: T) => void, // called on release before re-queueing
+  dispose: (t: T) => void, // called by clear()
 ): Pool<T> {
   // Free list implemented as indices into `items` to avoid per-frame array allocs.
   const items: T[] = [];
@@ -52,8 +52,12 @@ export function makePool<T>(
       items.length = 0;
       freeIdx.length = 0;
     },
-    size(): number { return items.length; },
-    available(): number { return freeIdx.length; },
+    size(): number {
+      return items.length;
+    },
+    available(): number {
+      return freeIdx.length;
+    },
   };
 
   return api;

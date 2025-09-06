@@ -2,7 +2,12 @@
 import { createEngine } from "@client/engine/engine";
 import { createLifecycle } from "@client/engine/lifecycle";
 import { createWorld } from "@client/scene/scene";
-import { attachLocalInput, readIntent, toggleControlsMirrored, blockInputFor } from "@client/input/aggregate";
+import {
+  attachLocalInput,
+  readIntent,
+  toggleControlsMirrored,
+  blockInputFor,
+} from "@client/input/aggregate";
 import { createBounces } from "@client/visuals/bounce/bounces";
 import { FXManager } from "@client/fx/manager";
 import { createScoreboard } from "@client/ui/scoreboard";
@@ -12,7 +17,10 @@ import { createPaddleAnimator } from "@client/visuals/animate-paddle";
 import { computeBounds } from "@app/adapters/bounds";
 import { detectEnteredServe, onEnteredServe } from "@app/adapters/serve-cue";
 import { applyFrameEvents } from "@app/adapters/events-to-fx";
-import { mapStateForPlayerRows, mapHistoryForPlayers } from "@app/adapters/hud-map";
+import {
+  mapStateForPlayerRows,
+  mapHistoryForPlayers,
+} from "@app/adapters/hud-map";
 
 import {
   type GameState,
@@ -39,7 +47,12 @@ export function createLocalApp(canvas: HTMLCanvasElement): PongInstance {
   // Engine/scene/world
   const { engine, engineDisposable } = createEngine(canvas);
   const world = createWorld(engine);
-  const { scene, paddles: { left, right }, table, ball } = world;
+  const {
+    scene,
+    paddles: { left, right },
+    table,
+    ball,
+  } = world;
 
   // HUD (DOM overlay anchored to canvas)
   const hud = createScoreboard();
@@ -154,13 +167,21 @@ export function createLocalApp(canvas: HTMLCanvasElement): PongInstance {
       // 4) Entered serve? Trigger cues
       const entered = detectEnteredServe(prevPhase, state.phase);
       if (entered) {
-        onEnteredServe(entered, { ballMesh: ball.mesh, Bounces, paddleAnim, blockInputFor });
+        onEnteredServe(entered, {
+          ballMesh: ball.mesh,
+          Bounces,
+          paddleAnim,
+          blockInputFor,
+        });
       }
 
       // 5) HUD (player-pinned)
       const snap = match.getSnapshot();
       const stateForHUD = mapStateForPlayerRows(state, rowsMirrored);
-      const historyForHUD = mapHistoryForPlayers(snap.gamesHistory, RULES.match.switchEndsEachGame);
+      const historyForHUD = mapHistoryForPlayers(
+        snap.gamesHistory,
+        RULES.match.switchEndsEachGame,
+      );
       updateHUD(hud, stateForHUD, names, {
         bestOf: snap.bestOf,
         currentGameIndex: snap.currentGameIndex,
@@ -196,7 +217,8 @@ export function createLocalApp(canvas: HTMLCanvasElement): PongInstance {
     start() {
       // Pre-roll: run serve selection FX, gate input, then arm opening serve.
       void import("@client/fx/utils").then(({ incHide }) => {
-        incHide(ball.mesh); incHide(ball.mesh);
+        incHide(ball.mesh);
+        incHide(ball.mesh);
       });
 
       blockInputFor(SERVE_SELECT_TOTAL_MS + 200);
@@ -212,7 +234,8 @@ export function createLocalApp(canvas: HTMLCanvasElement): PongInstance {
         Bounces.scheduleServe(dir);
 
         const { decHide } = await import("@client/fx/utils");
-        decHide(ball.mesh); decHide(ball.mesh);
+        decHide(ball.mesh);
+        decHide(ball.mesh);
       });
     },
     destroy,

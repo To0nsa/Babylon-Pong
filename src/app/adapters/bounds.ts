@@ -31,7 +31,6 @@ export function computeBounds(world: WorldKit): {
   const leftPaddleX = left.mesh.getBoundingInfo().boundingBox.centerWorld.x;
   const rightPaddleX = right.mesh.getBoundingInfo().boundingBox.centerWorld.x;
 
-
   const bounds: GameState["bounds"] = {
     halfLengthX,
     halfWidthZ,

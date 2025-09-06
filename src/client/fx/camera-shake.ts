@@ -11,9 +11,9 @@ type Unsub = () => void;
 type Shake = {
   ageMs: number;
   lifeMs: number;
-  amp: number;     // radians
-  fxHz: number;    // base frequency
-  seedX: number;   // phase seeds (radians)
+  amp: number; // radians
+  fxHz: number; // base frequency
+  seedX: number; // phase seeds (radians)
   seedY: number;
   seedZ: number;
 };
@@ -33,9 +33,9 @@ export function createCameraShakeFX(
 
   // Tunables
   const INT = Math.max(0.001, cfg.intensity.sizeMul || 1);
-  const BASE_MS  = 320;           // default shake length
-  const BASE_ANG = 0.006 * INT;   // ~0.34° at strength=1
-  const BASE_HZ  = 160;
+  const BASE_MS = 320; // default shake length
+  const BASE_ANG = 0.006 * INT; // ~0.34° at strength=1
+  const BASE_HZ = 160;
 
   const active: Shake[] = [];
   let unsub: Unsub | null = null;
@@ -51,7 +51,9 @@ export function createCameraShakeFX(
       }
 
       const dtMs = dt * 1000;
-      let rx = 0, ry = 0, rz = 0;
+      let rx = 0,
+        ry = 0,
+        rz = 0;
 
       for (let i = active.length - 1; i >= 0; --i) {
         const s = active[i];
@@ -66,12 +68,20 @@ export function createCameraShakeFX(
         // Tri-sin blend per axis (deterministic, branchless)
         const t = s.ageMs / 1000;
         const wx = s.fxHz * (1.0 + 0.15 * Math.sin(1.7 * t + s.seedX));
-        const wy = s.fxHz * (1.1 + 0.20 * Math.sin(1.3 * t + s.seedY));
-        const wz = s.fxHz * (0.9 + 0.10 * Math.sin(1.9 * t + s.seedZ));
+        const wy = s.fxHz * (1.1 + 0.2 * Math.sin(1.3 * t + s.seedY));
+        const wz = s.fxHz * (0.9 + 0.1 * Math.sin(1.9 * t + s.seedZ));
 
-        rx += ampNow * (Math.sin(wx * t + s.seedX) + 0.5 * Math.sin(0.5 * wx * t + s.seedY));
-        ry += ampNow * (Math.sin(wy * t + s.seedY) + 0.5 * Math.sin(0.5 * wy * t + s.seedZ));
-        rz += ampNow * (Math.sin(wz * t + s.seedZ) + 0.5 * Math.sin(0.5 * wz * t + s.seedX)) * 0.6; // keep roll gentler
+        rx +=
+          ampNow *
+          (Math.sin(wx * t + s.seedX) + 0.5 * Math.sin(0.5 * wx * t + s.seedY));
+        ry +=
+          ampNow *
+          (Math.sin(wy * t + s.seedY) + 0.5 * Math.sin(0.5 * wy * t + s.seedZ));
+        rz +=
+          ampNow *
+          (Math.sin(wz * t + s.seedZ) +
+            0.5 * Math.sin(0.5 * wz * t + s.seedX)) *
+          0.6; // keep roll gentler
 
         if (t01 >= 1) active.splice(i, 1);
       }
@@ -90,13 +100,14 @@ export function createCameraShakeFX(
 
   function trigger(strength = 1.0, ms = BASE_MS) {
     const now = performance.now();
-    const rand = (k: number) => (Math.sin((now + k * 123.456) * 0.001) * Math.PI) % (Math.PI * 2);
+    const rand = (k: number) =>
+      (Math.sin((now + k * 123.456) * 0.001) * Math.PI) % (Math.PI * 2);
 
     const s: Shake = {
       ageMs: 0,
       lifeMs: Math.max(60, ms | 0),
       amp: BASE_ANG * Math.max(0, strength),
-      fxHz: BASE_HZ * (0.95 + (Math.abs(Math.sin(now * 0.003)) * 0.1)),
+      fxHz: BASE_HZ * (0.95 + Math.abs(Math.sin(now * 0.003)) * 0.1),
       seedX: rand(1),
       seedY: rand(2),
       seedZ: rand(3),
@@ -107,7 +118,10 @@ export function createCameraShakeFX(
   }
 
   function dispose() {
-    if (unsub) { unsub(); unsub = null; }
+    if (unsub) {
+      unsub();
+      unsub = null;
+    }
     active.length = 0;
     root.rotation.set(0, 0, 0);
     camera.parent = prevParent;

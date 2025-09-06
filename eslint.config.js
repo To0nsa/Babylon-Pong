@@ -26,9 +26,14 @@ export default [
       },
     },
     rules: {
-      "no-restricted-properties": ["error",
+      "no-restricted-properties": [
+        "error",
         { object: "Math", property: "random", message: "Use injected rng" },
-        { object: "Date", property: "now", message: "Do not time-seed game logic" },
+        {
+          object: "Date",
+          property: "now",
+          message: "Do not time-seed game logic",
+        },
       ],
       // --- Imports ---
       // Discourage parent-relative imports ("../") to keep imports clean and maintainable

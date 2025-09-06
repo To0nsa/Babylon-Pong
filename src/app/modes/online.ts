@@ -21,10 +21,10 @@ import { clamp01 } from "@shared/utils/math";
 
 // --- Net placeholders (wire your transport here) -----------------------------------
 type OnlineClient = {
-  mySeat: PlayerSeat;                           // "P1" | "P2"
+  mySeat: PlayerSeat; // "P1" | "P2"
   onSnapshot(cb: (s: GameState, ev: FrameEvents) => void): void;
   onOpponentAxis(cb: (axis: number) => void): void; // scalar [-1..1]
-  sendLocalAxis(axis: number): void;            // called every tick
+  sendLocalAxis(axis: number): void; // called every tick
   disconnect(): void;
 };
 
@@ -52,7 +52,12 @@ export function createOnlineApp(canvas: HTMLCanvasElement): PongInstance {
   // Engine/scene/world (identical to local)
   const { engine, engineDisposable } = createEngine(canvas);
   const world = createWorld(engine);
-  const { scene, paddles: { left, right }, table, ball } = world;
+  const {
+    scene,
+    paddles: { left, right },
+    table,
+    ball,
+  } = world;
 
   // HUD
   const hud = createScoreboard();
@@ -73,10 +78,10 @@ export function createOnlineApp(canvas: HTMLCanvasElement): PongInstance {
 
   // --- Net state -------------------------------------------------------------------
   let net!: OnlineClient;
-  let mySeat: PlayerSeat = "P1";        // set after connect()
-  let oppAxis = 0;                      // last known opponent axis
-  let latest: GameState | null = null;  // latest server snapshot
-  let lastEvents: FrameEvents = {};     // events paired with latest snapshot
+  let mySeat: PlayerSeat = "P1"; // set after connect()
+  let oppAxis = 0; // last known opponent axis
+  let latest: GameState | null = null; // latest server snapshot
+  let lastEvents: FrameEvents = {}; // events paired with latest snapshot
   let prevPhase: GameState["phase"] | null = null;
 
   // Simple (optional) rows mirroring knob if you choose to flip per-game
@@ -85,7 +90,8 @@ export function createOnlineApp(canvas: HTMLCanvasElement): PongInstance {
 
   // Interpolation cache (keep tiny: just ball X and paddle Z’s)
   let prevSnap: GameState | null = null;
-  let prevT = 0, currT = 0; // ms timestamps for snapshots
+  let prevT = 0,
+    currT = 0; // ms timestamps for snapshots
 
   const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
@@ -102,14 +108,19 @@ export function createOnlineApp(canvas: HTMLCanvasElement): PongInstance {
       // 2) Visuals from server snapshot (with tiny interpolation)
       const now = performance.now();
       const hasPrev = !!prevSnap && prevT < currT;
-      const alpha = hasPrev ? clamp01((now - currT) / Math.max(1, currT - prevT)) : 1;
+      const alpha = hasPrev
+        ? clamp01((now - currT) / Math.max(1, currT - prevT))
+        : 1;
 
       const snap = latest ?? prevSnap;
       if (snap) {
         // Interpolate a few hot fields; fall back to latest when no prev.
         const ref = prevSnap ?? snap;
-        const ballX = hasPrev ? lerp(ref.ball.x, snap.ball.x, alpha) : snap.ball.x;
-        const ballVX = (snap.ball.x - ref.ball.x) / Math.max(1, (currT - prevT)) * 1000;
+        const ballX = hasPrev
+          ? lerp(ref.ball.x, snap.ball.x, alpha)
+          : snap.ball.x;
+        const ballVX =
+          ((snap.ball.x - ref.ball.x) / Math.max(1, currT - prevT)) * 1000;
 
         // Ball Y via the same visual bounce helper you use locally
         // (optional — you can also drive Y directly from server if you send it)
@@ -118,15 +129,23 @@ export function createOnlineApp(canvas: HTMLCanvasElement): PongInstance {
           return 0; // keep simple; or plug your existing createBounces if desired
         })();
 
-        ball.mesh.position.set(ballX, BOUNCE_Y, hasPrev ? lerp(ref.ball.z, snap.ball.z, alpha) : snap.ball.z);
+        ball.mesh.position.set(
+          ballX,
+          BOUNCE_Y,
+          hasPrev ? lerp(ref.ball.z, snap.ball.z, alpha) : snap.ball.z,
+        );
 
         // Paddles (authoritative from server)
-        left.mesh.position.z  = hasPrev ? lerp(ref.paddles.P1.z, snap.paddles.P1.z, alpha) : snap.paddles.P1.z;
-        right.mesh.position.z = hasPrev ? lerp(ref.paddles.P2.z, snap.paddles.P2.z, alpha) : snap.paddles.P2.z;
+        left.mesh.position.z = hasPrev
+          ? lerp(ref.paddles.P1.z, snap.paddles.P1.z, alpha)
+          : snap.paddles.P1.z;
+        right.mesh.position.z = hasPrev
+          ? lerp(ref.paddles.P2.z, snap.paddles.P2.z, alpha)
+          : snap.paddles.P2.z;
 
         // 3) HUD (player-pinned if you decide to mirror rows)
         const stateForHUD = mapStateForPlayerRows(snap, rowsMirrored);
-        updateHUD(hud, stateForHUD, names, /* optional match snapshot here */);
+        updateHUD(hud, stateForHUD, names /* optional match snapshot here */);
       }
 
       // 4) FX from last frame’s server events
@@ -162,7 +181,11 @@ export function createOnlineApp(canvas: HTMLCanvasElement): PongInstance {
           onEnteredServe(entered, {
             ballMesh: ball.mesh,
             // If you decide to use createBounces here, pass it; tiny shell omits for brevity.
-            Bounces: { scheduleServe: () => {}, update: () => 0, clear: () => {} } as any,
+            Bounces: {
+              scheduleServe: () => {},
+              update: () => 0,
+              clear: () => {},
+            } as any,
             paddleAnim: { cue: () => 0 },
             blockInputFor,
           });
@@ -185,10 +208,18 @@ export function createOnlineApp(canvas: HTMLCanvasElement): PongInstance {
 
   const destroy = () => {
     loop.stop();
-    try { net?.disconnect(); } catch {}
-    try { world.dispose(); } catch {}
-    try { fx.dispose(); } catch {}
-    try { hud.dispose(); } catch {}
+    try {
+      net?.disconnect();
+    } catch {}
+    try {
+      world.dispose();
+    } catch {}
+    try {
+      fx.dispose();
+    } catch {}
+    try {
+      hud.dispose();
+    } catch {}
     scene.dispose();
     engineDisposable.dispose();
   };

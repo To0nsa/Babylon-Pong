@@ -47,7 +47,11 @@ export function createForceFieldFX(
     () => {
       const mesh = MeshBuilder.CreateDisc(
         "ff-hex",
-        { radius: baseRadius, tessellation: 6, sideOrientation: Mesh.DOUBLESIDE },
+        {
+          radius: baseRadius,
+          tessellation: 6,
+          sideOrientation: Mesh.DOUBLESIDE,
+        },
         scene,
       );
       mesh.isPickable = false;
@@ -100,8 +104,8 @@ export function createForceFieldFX(
     unsub = addTicker((dt) => {
       // Auto-stop when no active pulses, but ALSO clear our handle so we can re-arm later.
       if (active.length === 0) {
-        unsub = null;        // <- crucial: allow next trigger() to add a new ticker
-        return false;        // FXManager will remove this ticker this frame
+        unsub = null; // <- crucial: allow next trigger() to add a new ticker
+        return false; // FXManager will remove this ticker this frame
       }
 
       const dtMs = dt * 1000;
@@ -125,12 +129,7 @@ export function createForceFieldFX(
     });
   }
 
-  function spawn(
-    side: WallSide,
-    x: number,
-    y: number,
-    vzAbs: number,
-  ) {
+  function spawn(side: WallSide, x: number, y: number, vzAbs: number) {
     let actor = pool.acquire();
     if (!actor) {
       // Pool exhausted: recycle oldest for determinism & stability.
@@ -150,8 +149,8 @@ export function createForceFieldFX(
     const alphaPeak = C.peakAlpha * (0.7 + 0.6 * norm);
 
     // NEW: size is fixed (no speed coupling). Use baseRadiusMul in config to tune overall size.
-    const startScale = 0.85;  // compact initial pop
-    const endScale   = 1.20;  // gentle expansion
+    const startScale = 0.85; // compact initial pop
+    const endScale = 1.2; // gentle expansion
 
     // Position & orientation
     actor.mesh.position.copyFromFloats(x, y, z);

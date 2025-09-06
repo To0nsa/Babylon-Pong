@@ -10,20 +10,16 @@ import {
   tableTennisRules,
   type GameState,
 } from "@game";
-import {
-  pickInitialServer,
-  type MatchSeed,
-  type InputIntent,
-} from "@shared";
+import { pickInitialServer, type MatchSeed, type InputIntent } from "@shared";
 
 // --- Stable “standard” bounds (copied from visual proportions) ---
 const StandardBounds: GameState["bounds"] = {
-  halfLengthX: 1.1,        // table half-length (x)
-  halfWidthZ: 0.55,        // table half-width (z)
-  paddleHalfDepthZ: 0.12,  // paddle half-size in Z for hit tests
-  leftPaddleX: -0.95,      // left plane center X
-  rightPaddleX: 0.95,      // right plane center X
-  ballRadius: 0.06,        // for collisions/hits
+  halfLengthX: 1.1, // table half-length (x)
+  halfWidthZ: 0.55, // table half-width (z)
+  paddleHalfDepthZ: 0.12, // paddle half-size in Z for hit tests
+  leftPaddleX: -0.95, // left plane center X
+  rightPaddleX: 0.95, // right plane center X
+  ballRadius: 0.06, // for collisions/hits
 };
 
 // Fixed rules matching your table-tennis preset defaults.
@@ -58,7 +54,12 @@ function makeIntentFor(state: GameState): InputIntent {
 
 type RunResult = {
   final: Omit<GameState, "params"> & { params: never }; // omit floats not needed here
-  gamesHistory?: Array<{ gameIndex: number; east: number; west: number; winner: "east"|"west" }>;
+  gamesHistory?: Array<{
+    gameIndex: number;
+    east: number;
+    west: number;
+    winner: "east" | "west";
+  }>;
   bestOf: number;
   currentGameIndex: number;
 };
@@ -98,7 +99,7 @@ function runOnce(seed: MatchSeed, seconds = 20): RunResult {
     const pToWin = Math.floor(snap.bestOf / 2) + 1;
     const w = snap.gamesHistory?.reduce(
       (acc, g) => ({ ...acc, [g.winner]: (acc as any)[g.winner] + 1 }),
-      { east: 0, west: 0 } as Record<"east"|"west", number>
+      { east: 0, west: 0 } as Record<"east" | "west", number>,
     ) || { east: 0, west: 0 };
     if (w.east >= pToWin || w.west >= pToWin) break;
   }

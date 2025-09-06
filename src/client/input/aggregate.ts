@@ -35,7 +35,7 @@ export function readIntent(): InputIntent {
   const { leftAxisTouch, rightAxisTouch } = readTouchAxes();
   const { leftAxisKey, rightAxisKey } = readKeyboardAxes();
 
-  const leftAxis  = leftAxisTouch  !== 0 ? leftAxisTouch  : leftAxisKey;
+  const leftAxis = leftAxisTouch !== 0 ? leftAxisTouch : leftAxisKey;
   const rightAxis = rightAxisTouch !== 0 ? rightAxisTouch : rightAxisKey;
 
   // When sides are swapped, swap which paddle each player controls (P1/P2 stable).
@@ -43,7 +43,7 @@ export function readIntent(): InputIntent {
     INTENT.leftAxis = rightAxis; // drives P1
     INTENT.rightAxis = leftAxis; // drives P2
   } else {
-    INTENT.leftAxis = leftAxis;   // drives P1
+    INTENT.leftAxis = leftAxis; // drives P1
     INTENT.rightAxis = rightAxis; // drives P2
   }
   return INTENT;

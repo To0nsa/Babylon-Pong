@@ -18,11 +18,11 @@ export function mixOnlineAxes(
   remoteAxis: number,
 ): InputIntent {
   if (localSeat === "P1") {
-    MIXED.leftAxis = localAxis;   // drives P1
+    MIXED.leftAxis = localAxis; // drives P1
     MIXED.rightAxis = remoteAxis; // drives P2
   } else {
-    MIXED.leftAxis = remoteAxis;  // drives P1
-    MIXED.rightAxis = localAxis;  // drives P2
+    MIXED.leftAxis = remoteAxis; // drives P1
+    MIXED.rightAxis = localAxis; // drives P2
   }
   return MIXED;
 }
