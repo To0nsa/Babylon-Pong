@@ -100,7 +100,7 @@ export function createLocalApp(canvas: HTMLCanvasElement): PongInstance {
   const matchSeed = nextLocalMatchSeed(rulesetCrc, tableW, tableH);
   const initialServer = pickInitialServer(matchSeed);
 
-  // Visual bounce helper — seeded per match (deterministic variety)
+  // Visual bounce helper — seeded per match (deterministic variety; visual-only)
   const Bounces = createBounces(
     ball.mesh,
     table.tableTop.position.y,
@@ -201,12 +201,11 @@ export function createLocalApp(canvas: HTMLCanvasElement): PongInstance {
     },
   });
 
-  // Unified teardown
   scene.onDisposeObservable.add(() => {
-    world.dispose();
     fx.dispose();
     hud.dispose();
   });
+
   const destroy = () => {
     loop.stop();
     scene.dispose();

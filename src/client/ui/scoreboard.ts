@@ -1,4 +1,4 @@
-// src/client/ui/Scoreboard.ts
+// src/client/ui/scoreboard.ts
 import type { TableEnd } from "@shared/domain/ids";
 import type { GameHistoryEntry } from "@shared/protocol/state";
 
@@ -309,6 +309,16 @@ export function createScoreboard(): DomScoreboardAPI {
   let boundCanvas: HTMLCanvasElement | null = null;
   let ro: ResizeObserver | null = null;
 
+  // rAF micro-throttle: coalesce resize/scroll/RO callbacks to <= 1 per frame
+  let rafId: number | null = null;
+  const scheduleSync = () => {
+    if (rafId !== null) return;
+    rafId = requestAnimationFrame(() => {
+      rafId = null;
+      syncOverlay();
+    });
+  };
+
   const syncOverlay = () => {
     if (!boundCanvas) return;
     const rect = boundCanvas.getBoundingClientRect();
@@ -324,23 +334,31 @@ export function createScoreboard(): DomScoreboardAPI {
 
   const attachToCanvas = (canvas: HTMLCanvasElement) => {
     boundCanvas = canvas;
-    syncOverlay();
+    scheduleSync();
     if (ro) ro.disconnect();
-    ro = new ResizeObserver(() => syncOverlay());
+    ro = new ResizeObserver(() => scheduleSync());
     ro.observe(canvas);
   };
 
-  const onResize = () => syncOverlay();
-  window.addEventListener("resize", onResize);
-  window.addEventListener("scroll", onResize, { passive: true });
+  // Coalesced listeners
+  window.addEventListener("resize", scheduleSync);
+  window.addEventListener("scroll", scheduleSync, { passive: true });
 
   const dispose = () => {
-    window.removeEventListener("resize", onResize);
-    window.removeEventListener("scroll", onResize);
-    if (ro) ro.disconnect();
+    window.removeEventListener("resize", scheduleSync);
+    window.removeEventListener("scroll", scheduleSync);
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+    if (ro) {
+      ro.disconnect();
+      ro = null;
+    }
     root.contains(overlay) && root.removeChild(overlay);
     if (!existingRoot && root.parentElement)
       root.parentElement.removeChild(root);
+    boundCanvas = null;
   };
 
   return {

@@ -1,4 +1,4 @@
-// src/client/scene/Scene.ts
+// src/client/scene/scene.ts
 import { Scene } from "@babylonjs/core/scene";
 import type { Engine } from "@babylonjs/core/Engines/engine";
 import type { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera";
@@ -60,8 +60,11 @@ export function createWorld(engine: Engine): WorldKit {
   shadows.addCasters(ball.mesh, left.mesh, right.mesh);
   shadows.setReceives(table.tableTop, table.tableDepth);
 
-  // Unified disposer
-  const dispose = () => {
+  // ---- Single cleanup body (idempotent) -----------------------------------
+  let freed = false;
+  const freeOwnedResources = () => {
+    if (freed) return;
+    freed = true;
     try {
       shadows.sg.dispose();
     } catch {}
@@ -75,27 +78,18 @@ export function createWorld(engine: Engine): WorldKit {
     try {
       bg.dispose();
     } catch {}
+    // Note: camera/lights belong to the scene; letting scene.dispose() handle them.
+  };
+
+  // Auto-clean when the scene goes away
+  scene.onDisposeObservable.add(freeOwnedResources);
+
+  // World disposer triggers scene teardown (which calls freeOwnedResources)
+  const dispose = () => {
     try {
       scene.dispose();
     } catch {}
   };
-
-  // Auto-clean when the scene goes away
-  scene.onDisposeObservable.add(() => {
-    try {
-      shadows.sg.dispose();
-    } catch {}
-    try {
-      net.dispose();
-      ball.dispose();
-      left.dispose();
-      right.dispose();
-      table.dispose();
-    } catch {}
-    try {
-      bg.dispose();
-    } catch {}
-  });
 
   return {
     scene,

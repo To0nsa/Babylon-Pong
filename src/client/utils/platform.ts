@@ -1,15 +1,8 @@
-// src/shared/utils/Logger.ts
-import Logger from "@shared/utils/logger";
+// src/client/utils/platform.ts
 
 export function isMobile(): boolean {
-  const ctx = "isMobile";
-
   // Guard for SSR/Node/test environments
   if (typeof window === "undefined" || typeof navigator === "undefined") {
-    Logger.warn(
-      ctx,
-      "Called in a non-browser environment (SSR/Node). Returning false.",
-    );
     return false;
   }
 
@@ -28,18 +21,6 @@ export function isMobile(): boolean {
     window.matchMedia("(pointer: coarse)").matches;
 
   const result = isMobileUA || isSmallHighDPI || isTouchDevice;
-
-  Logger.debug(ctx, {
-    ua,
-    isMobileUA,
-    innerWidth: window.innerWidth,
-    devicePixelRatio: window.devicePixelRatio,
-    isSmallHighDPI,
-    isTouchDevice,
-    result,
-  });
-
-  Logger.info(ctx, "Result:", result);
 
   return result;
 }

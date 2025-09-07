@@ -22,11 +22,12 @@ export function createEngine(canvas: HTMLCanvasElement): EngineKit {
     adaptToDeviceRatio: true,
   };
 
-  // antialias: disable on mobile for perf/battery; host can override elsewhere if needed
+  // Antialias: disable on mobile for perf/battery;
+  // host can override elsewhere if needed.
   const engine = new Engine(canvas, !isMobile(), opts);
 
   // --- Window and canvas resize plumbing ---
-  const ac = new AbortController();
+  let ac: AbortController | null = new AbortController();
   const onResize = () => {
     try {
       engine.resize();
@@ -35,9 +36,11 @@ export function createEngine(canvas: HTMLCanvasElement): EngineKit {
       console.warn("[Engine] resize() failed:", e);
     }
   };
-  window.addEventListener("resize", onResize, { signal: ac.signal });
+  window.addEventListener("resize", onResize, {
+    signal: ac.signal,
+  });
 
-  const ro = new ResizeObserver(() => onResize());
+  let ro: ResizeObserver | null = new ResizeObserver(() => onResize());
   ro.observe(canvas);
 
   // --- GPU context lifecycle (online-ready hygiene) ---
@@ -65,13 +68,36 @@ export function createEngine(canvas: HTMLCanvasElement): EngineKit {
     console.info("[Engine] WebGL context restored.");
   });
 
+  let disposed = false;
   const engineDisposable: Disposable = {
     dispose() {
-      engine.onContextLostObservable.remove(lostToken);
-      engine.onContextRestoredObservable.remove(restoredToken);
-      ac.abort();
-      ro.disconnect();
-      engine.dispose();
+      if (disposed) return;
+      disposed = true;
+
+      // observables
+      try {
+        engine.onContextLostObservable.remove(lostToken);
+        engine.onContextRestoredObservable.remove(restoredToken);
+      } catch {}
+
+      // listeners/observers
+      try {
+        if (ac) {
+          ac.abort(); // removes window.resize listener
+          ac = null;
+        }
+      } catch {}
+      try {
+        if (ro) {
+          ro.disconnect();
+          ro = null;
+        }
+      } catch {}
+
+      // engine
+      try {
+        engine.dispose();
+      } catch {}
     },
   };
 
