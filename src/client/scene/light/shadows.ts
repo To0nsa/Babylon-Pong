@@ -1,4 +1,4 @@
-// src/core/light/Shadows.ts
+// src/client/scene/light/shadows.ts
 import "@babylonjs/core/Lights/Shadows/shadowGeneratorSceneComponent";
 import type { DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
 import { ShadowGenerator } from "@babylonjs/core/Lights/Shadows/shadowGenerator";

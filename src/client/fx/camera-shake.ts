@@ -1,3 +1,4 @@
+// src/client/fx/camera-shake.ts
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import type { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera";
 import { Scalar } from "@babylonjs/core/Maths/math.scalar";

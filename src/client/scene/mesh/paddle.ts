@@ -1,4 +1,4 @@
-// src/core/scene/Paddle.ts
+// src/client/scene/mesh/paddle.ts
 import type { Scene } from "@babylonjs/core/scene";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";

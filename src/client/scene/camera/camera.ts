@@ -1,4 +1,4 @@
-// src/client/Camera.ts
+// src/client/scene/camera/camera.ts
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera";
 import type { Scene } from "@babylonjs/core/scene";

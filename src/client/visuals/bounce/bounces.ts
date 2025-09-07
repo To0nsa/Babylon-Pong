@@ -1,4 +1,4 @@
-// src/client/visuals/Bounces.ts
+// src/client/visuals/bounce/bounces.ts
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { deriveSeed32, xorshift32 } from "@shared/utils/random";
 import { clamp01, quadBezierY } from "@client/visuals/bounce/math";

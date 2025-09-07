@@ -1,4 +1,4 @@
-// src/shared/utils/RafTicker.ts
+// src/shared/utils/raf-ticker.ts
 export type RafTickFn = (dtMs: number) => void;
 
 /** requestAnimationFrame-based ticker (idempotent start/stop). */

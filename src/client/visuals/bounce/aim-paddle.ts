@@ -1,4 +1,4 @@
-// src/client/visuals/paddleAim.ts
+// src/client/visuals/bounce/aim-paddle.ts
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 
 /**

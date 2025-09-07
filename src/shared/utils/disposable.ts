@@ -1,4 +1,4 @@
-// src/shared/utils/Disposable.ts
+// src/shared/utils/disposable.ts
 export interface Disposable {
   dispose(): void;
 }

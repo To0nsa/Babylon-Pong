@@ -1,4 +1,4 @@
-// src/client/scene/sceneColor.ts
+// src/client/scene/color.ts
 import { Color3 } from "@babylonjs/core/Maths/math.color";
 
 /**

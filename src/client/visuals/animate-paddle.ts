@@ -1,4 +1,4 @@
-// src/client/visuals/animatePaddle.ts
+// src/client/visuals/animate-paddle.ts
 import { Animation } from "@babylonjs/core/Animations/animation";
 import { CubicEase, EasingFunction } from "@babylonjs/core/Animations/easing";
 import type { Scene } from "@babylonjs/core/scene";

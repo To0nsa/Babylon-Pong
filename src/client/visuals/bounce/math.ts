@@ -1,4 +1,4 @@
-// src/client/visuals/bounceMath.ts
+// src/client/visuals/bounce/math.ts
 
 /** Clamp to [0,1] without Math.min/Math.max branching cost inside hot loops. */
 export const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);

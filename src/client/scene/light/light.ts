@@ -1,4 +1,4 @@
-// src/core/light/Light.ts
+// src/client/scene/light/light.ts
 import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
 import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";

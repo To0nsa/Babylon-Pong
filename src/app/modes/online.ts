@@ -74,6 +74,7 @@ export function createOnlineApp(canvas: HTMLCanvasElement): PongInstance {
     ballMesh: ball.mesh,
     ballRadius: bounds.ballRadius,
     tableTop: table.tableTop,
+    camera: world.camera,
   });
 
   // --- Net state -------------------------------------------------------------------

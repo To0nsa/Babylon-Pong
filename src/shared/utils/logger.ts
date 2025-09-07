@@ -1,4 +1,4 @@
-// src/utils/Logger.ts
+// src/shared/utils/logger.ts
 type LogLevel = "debug" | "info" | "warn" | "error";
 
 class Logger {

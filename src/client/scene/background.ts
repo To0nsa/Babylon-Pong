@@ -1,4 +1,4 @@
-// src/render/background/SpaceBackground.ts
+// src/client/scene/background.ts
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { ShaderMaterial } from "@babylonjs/core/Materials/shaderMaterial";
 import { Effect } from "@babylonjs/core/Materials/effect";

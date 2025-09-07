@@ -1,3 +1,4 @@
+// src/client/fx/config.ts
 import { Color3 } from "@babylonjs/core/Maths/math";
 import { FXColors } from "./colors";
 

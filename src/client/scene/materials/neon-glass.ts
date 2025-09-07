@@ -1,4 +1,4 @@
-// src/client/scene/materials/neon.ts
+// src/client/scene/materials/neon-glass.ts
 import type { Scene } from "@babylonjs/core/scene";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { FresnelParameters } from "@babylonjs/core/Materials/fresnelParameters";

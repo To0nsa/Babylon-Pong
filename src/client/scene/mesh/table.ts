@@ -1,4 +1,4 @@
-// src/core/scene/TennisTable.ts  (a.k.a. client/scene/mesh/Table.ts)
+// src/client/scene/mesh/table.ts
 import type { Scene } from "@babylonjs/core/scene";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";

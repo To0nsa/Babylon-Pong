@@ -1,4 +1,4 @@
-// src/shared/utils/rng.ts
+// src/shared/utils/random.ts
 import type { TableEnd } from "@shared/domain/ids";
 
 export type MatchSeed = number;

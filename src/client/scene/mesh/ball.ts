@@ -1,4 +1,4 @@
-// src/client/scene/Ball.ts
+// src/client/scene/mesh/ball.ts
 import type { Scene } from "@babylonjs/core/scene";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
