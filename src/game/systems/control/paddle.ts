@@ -1,25 +1,18 @@
-// src/game/systems/paddle.ts
-import type { GameState } from "@game/model/state";
-import type { InputIntent } from "@shared/protocol/input";
+// src/game/systems/control/paddle.ts
+import type { GameState } from '@game/model/state';
+import type { InputIntent } from '@shared/protocol/input';
+import { clampZ } from '@game/systems/utils';
 
 /** Deterministic, pure step. Units: meters/second, seconds. */
-export function stepPaddles(
-  s: GameState,
-  inpt: InputIntent,
-  dt: number,
-): GameState {
-  const clampZ = (z: number) => {
-    const max = s.bounds.halfWidthZ - s.bounds.paddleHalfDepthZ;
-    return Math.max(-max, Math.min(max, z));
-  };
-
+export function stepPaddles(s: GameState, inpt: InputIntent, dt: number): GameState {
   const speed = s.params.paddleSpeed;
+  const maxZ = s.bounds.halfWidthZ - s.bounds.paddleHalfDepthZ;
 
   const leftVz = inpt.leftAxis * speed;
   const rightVz = inpt.rightAxis * speed;
 
-  const leftZ = clampZ(s.paddles.P1.z + leftVz * dt);
-  const rightZ = clampZ(s.paddles.P2.z + rightVz * dt);
+  const leftZ = clampZ(s.paddles.P1.z + leftVz * dt, -maxZ, +maxZ);
+  const rightZ = clampZ(s.paddles.P2.z + rightVz * dt, -maxZ, +maxZ);
 
   return {
     ...s,

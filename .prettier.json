@@ -8,7 +8,7 @@
   "tabWidth": 2,
   "endOfLine": "lf",
   "plugins": ["prettier-plugin-tailwindcss"],
-  "tailwindStylesheet": "./src/client/ui/theme.css",
+  "tailwindStylesheet": "./src/client/ui/tailwind.css",
   "overrides": [
     {
       "files": ["**/*.md", "**/*.mdx"],

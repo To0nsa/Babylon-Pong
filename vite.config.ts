@@ -1,21 +1,14 @@
-// vite.config.ts
+// vite.config.ts 
 import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
+  plugins: [tailwindcss(), tsconfigPaths()],
+  // Standard app build: Vite uses index.html as the entry automatically.
   build: {
-    lib: {
-      entry: "src/main.ts",
-      name: "BabylonPong",
-      fileName: "babylon-pong",
-      formats: ["es", "iife"],
-    },
-    rollupOptions: { output: { preserveModules: false } },
+    outDir: "dist",
     sourcemap: true,
   },
-  plugins: [
-    tsconfigPaths(), // can be first; order doesn’t matter for this one
-    tailwindcss(),
-  ],
 });
+
