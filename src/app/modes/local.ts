@@ -35,6 +35,7 @@ import {
 import { pickInitialServer, SERVE_SELECT_TOTAL_MS } from "@shared";
 import { deriveSeed32 } from "@shared/utils/random";
 import { nextLocalMatchSeed } from "@app/seed";
+import { disposeWorld } from "@app/teardown";
 
 interface PongInstance {
   start(): void;
@@ -201,16 +202,15 @@ export function createLocalApp(canvas: HTMLCanvasElement): PongInstance {
     },
   });
 
-  scene.onDisposeObservable.add(() => {
-    fx.dispose();
-    hud.dispose();
-  });
 
-  const destroy = () => {
-    loop.stop();
-    scene.dispose();
-    engineDisposable.dispose();
-  };
+  const destroy = () =>
+    disposeWorld({
+      loop,
+      world,                // owns the Scene; disposes it
+      fx,
+      hud,
+      engineDisposable,
+  });
 
   return {
     start() {

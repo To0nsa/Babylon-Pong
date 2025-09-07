@@ -13,6 +13,7 @@ import { mapStateForPlayerRows } from "@app/adapters/hud-map";
 import { readIntent } from "@client/input/aggregate";
 import { blockInputFor } from "@client/input/block";
 import { mixOnlineAxes, type PlayerSeat } from "@app/adapters/seat-router";
+import { disposeWorld } from "@app/teardown";
 
 import type { GameState } from "@game";
 import type { FrameEvents } from "@shared";
@@ -67,10 +68,10 @@ export function createOnlineApp(canvas: HTMLCanvasElement): PongInstance {
   const names = { east: "Magenta", west: "Green" } as const;
 
   // Render→headless bounds + FX
-  const { bounds, zMax } = computeBounds(world);
+  const { bounds } = computeBounds(world);
   const fx = new FXManager(scene, {
-    wallZNorth: +zMax,
-    wallZSouth: -zMax,
+    wallZNorth: +bounds.halfWidthZ,
+    wallZSouth: -bounds.halfWidthZ,
     ballMesh: ball.mesh,
     ballRadius: bounds.ballRadius,
     tableTop: table.tableTop,
@@ -207,23 +208,15 @@ export function createOnlineApp(canvas: HTMLCanvasElement): PongInstance {
     loop.start();
   }
 
-  const destroy = () => {
-    loop.stop();
-    try {
-      net?.disconnect();
-    } catch {}
-    try {
-      world.dispose();
-    } catch {}
-    try {
-      fx.dispose();
-    } catch {}
-    try {
-      hud.dispose();
-    } catch {}
-    scene.dispose();
-    engineDisposable.dispose();
-  };
+  const destroy = () =>
+    disposeWorld({
+      loop,
+      net,                  // disconnect safely
+      world,                // disposes Scene and meshes
+      fx,
+      hud,
+      engineDisposable,
+    });
 
   return { start, destroy };
 }
